@@ -23,8 +23,8 @@ This repository showcases a full-stack authentication system using Go for the ba
    - Start the backend: `go run main.go`
 4. **Frontend Setup**
    - Install dependencies: `pnpm install`
-   - Copy `frontend/.env.example` to `frontend/.env`.
-   - Update environment variables in `frontend/.env`.
+   - Copy `frontend/.env.local.example` to `frontend/.env.local`.
+   - Update environment variables in `frontend/.env.local`.
    - Start the frontend: `pnpm dev`
 
 This repository will be updated as GoBetterAuth evolves, with additional examples demonstrating integration in various scenarios.
