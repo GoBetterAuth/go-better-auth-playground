@@ -109,7 +109,7 @@ func main() {
 				},
 			},
 		}),
-		gobetterauthdomain.WithHooks(gobetterauthdomain.HooksConfig{
+		gobetterauthdomain.WithEventHooks(gobetterauthdomain.EventHooksConfig{
 			OnUserSignedUp: func(user gobetterauthdomain.User) error {
 				logger.Info(fmt.Sprintf("User signed up with email: %s", user.Email))
 				return nil
