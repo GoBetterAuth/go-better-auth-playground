@@ -59,7 +59,7 @@ func main() {
 			DisableSignUp:            false,
 			RequireEmailVerification: true,
 			AutoSignIn:               true,
-			SendResetPassword: func(user *gobetterauthdomain.User, url, token string) error {
+			SendResetPassword: func(user gobetterauthdomain.User, url, token string) error {
 				if err := sendEmail(
 					user.Email,
 					"Reset your password",
@@ -73,7 +73,7 @@ func main() {
 		}),
 		gobetterauthdomain.WithEmailVerification(gobetterauthdomain.EmailVerificationConfig{
 			SendOnSignUp: true,
-			SendVerificationEmail: func(user *gobetterauthdomain.User, url string, token string) error {
+			SendVerificationEmail: func(user gobetterauthdomain.User, url string, token string) error {
 				if err := sendEmail(
 					user.Email,
 					"Verify your email",
@@ -88,7 +88,7 @@ func main() {
 		gobetterauthdomain.WithUser(gobetterauthdomain.UserConfig{
 			ChangeEmail: gobetterauthdomain.ChangeEmailConfig{
 				Enabled: true,
-				SendEmailChangeVerification: func(user *gobetterauthdomain.User, newEmail string, url string, token string) error {
+				SendEmailChangeVerification: func(user gobetterauthdomain.User, newEmail string, url string, token string) error {
 					if err := sendEmail(
 						user.Email,
 						"You requested to change your email",
