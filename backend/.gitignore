@@ -1,0 +1,6 @@
+# folders
+bin/
+
+# files
+.env*
+!.env.example
