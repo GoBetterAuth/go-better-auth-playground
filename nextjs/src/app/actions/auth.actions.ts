@@ -4,9 +4,12 @@ import { flattenValidationErrors } from 'next-safe-action';
 
 import { z } from 'zod';
 
+import { ENV_CONFIG } from '@/lib/env-config';
 import { goBetterAuthServer } from '@/lib/gobetterauth-server';
 import { actionClient } from '@/lib/safe-action';
 import { ActionError } from '@/models';
+
+// --------------------------
 
 const signUpFormSchema = z.object({
   name: z.string().nonempty("Name is required"),
@@ -30,7 +33,7 @@ export const signUpAction = actionClient
           parsedInput.name,
           parsedInput.email,
           parsedInput.password,
-          "http://localhost:3000/dashboard"
+          `${ENV_CONFIG.baseUrl}/dashboard`,
         );
 
       return data;
@@ -42,7 +45,7 @@ export const signUpAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to sign up user. Please try again later."
+          : "Failed to sign up user. Please try again later.",
       );
     }
   });
@@ -66,7 +69,7 @@ export const signInAction = actionClient
         await goBetterAuthServer.signIn.email(
           parsedInput.email,
           parsedInput.password,
-          "http://localhost:3000/dashboard"
+          `${ENV_CONFIG.baseUrl}/dashboard`,
         );
 
       return data;
@@ -78,7 +81,32 @@ export const signInAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to sign in user. Please try again later."
+          : "Failed to sign in user. Please try again later.",
+      );
+    }
+  });
+
+// --------------------------
+
+export const sendEmailVerificationAction = actionClient
+  .metadata({ actionName: "sendEmailVerificationAction" })
+  .action(async () => {
+    try {
+      const data: { message: string } =
+        await goBetterAuthServer.sendEmailVerification(
+          `${ENV_CONFIG.baseUrl}/dashboard`,
+        );
+
+      return data;
+    } catch (error) {
+      console.error("Error sending email verification:", error);
+      if (error instanceof ActionError) {
+        throw error;
+      }
+      throw new ActionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send email verification. Please try again later.",
       );
     }
   });
@@ -99,7 +127,7 @@ export const resetPasswordAction = actionClient
     try {
       const data = await goBetterAuthServer.resetPassword(
         parsedInput.email,
-        "http://localhost:3000/auth/change-password"
+        `${ENV_CONFIG.baseUrl}/auth/change-password`,
       );
 
       return data;
@@ -111,7 +139,7 @@ export const resetPasswordAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to send reset password link. Please try again later."
+          : "Failed to send reset password link. Please try again later.",
       );
     }
   });
@@ -136,7 +164,7 @@ export const changePasswordAction = actionClient
     try {
       const data = await goBetterAuthServer.changePassword(
         parsedInput.token,
-        parsedInput.newPassword
+        parsedInput.newPassword,
       );
 
       return data;
@@ -148,7 +176,7 @@ export const changePasswordAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to change password. Please try again later."
+          : "Failed to change password. Please try again later.",
       );
     }
   });
@@ -175,7 +203,7 @@ export const emailChangeAction = actionClient
     try {
       const data = await goBetterAuthServer.emailChange(
         parsedInput.newEmail,
-        "http://localhost:3000/dashboard"
+        `${ENV_CONFIG.baseUrl}/dashboard`,
       );
 
       return data;
@@ -187,7 +215,7 @@ export const emailChangeAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to change email. Please try again later."
+          : "Failed to change email. Please try again later.",
       );
     }
   });
@@ -209,7 +237,7 @@ export const signOutAction = actionClient
       throw new ActionError(
         error instanceof Error
           ? error.message
-          : "Failed to sign out. Please try again later."
+          : "Failed to sign out. Please try again later.",
       );
     }
   });

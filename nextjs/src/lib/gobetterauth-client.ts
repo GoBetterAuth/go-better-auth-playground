@@ -17,7 +17,7 @@ export const goBetterAuthClient = {
             email,
             password,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -43,7 +43,7 @@ export const goBetterAuthClient = {
             email,
             password,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -55,6 +55,29 @@ export const goBetterAuthClient = {
       return Promise.reject(new Error(data.message || response.statusText));
     },
   },
+  sendEmailVerification: async (callbackUrl?: string) => {
+    const response = await fetch(
+      `${ENV_CONFIG.gobetterauth.url}/email-verification`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          callback_url: callbackUrl,
+        }),
+      },
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+
+    const data = await response.json();
+    return Promise.reject(new Error(data.message || response.statusText));
+  },
   resetPassword: async (email: string, callbackUrl?: string) => {
     const response = await fetch(
       `${ENV_CONFIG.gobetterauth.url}/reset-password`,
@@ -65,7 +88,7 @@ export const goBetterAuthClient = {
         },
         credentials: "include",
         body: JSON.stringify({ email, callback_url: callbackUrl }),
-      }
+      },
     );
 
     if (response.ok) {
@@ -86,7 +109,7 @@ export const goBetterAuthClient = {
         },
         credentials: "include",
         body: JSON.stringify({ token, new_password: newPassword }),
-      }
+      },
     );
 
     if (response.ok) {
@@ -110,7 +133,7 @@ export const goBetterAuthClient = {
           email: newEmail,
           callback_url: callbackUrl,
         }),
-      }
+      },
     );
 
     if (response.ok) {

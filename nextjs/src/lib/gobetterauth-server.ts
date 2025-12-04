@@ -40,7 +40,7 @@ export const goBetterAuthServer = {
       name: string,
       email: string,
       password: string,
-      callbackUrl?: string
+      callbackUrl?: string,
     ) => {
       const response = await fetch(
         `${ENV_CONFIG.gobetterauth.url}/sign-up/email`,
@@ -54,7 +54,7 @@ export const goBetterAuthServer = {
             callback_url: callbackUrl,
           }),
           cache: "no-store",
-        }
+        },
       );
 
       if (response.ok) {
@@ -75,7 +75,7 @@ export const goBetterAuthServer = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, callback_url: callbackUrl }),
           cache: "no-store",
-        }
+        },
       );
 
       if (response.ok) {
@@ -87,6 +87,36 @@ export const goBetterAuthServer = {
       throw new Error(data.message || response.statusText);
     },
   },
+  sendEmailVerification: async (callbackUrl?: string) => {
+    const cookieStore = await cookies();
+    const allCookies = cookieStore
+      .getAll()
+      .map((c) => `${c.name}=${c.value}`)
+      .join("; ");
+
+    const response = await fetch(
+      `${ENV_CONFIG.gobetterauth.url}/email-verification`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: allCookies,
+        },
+        body: JSON.stringify({
+          callback_url: callbackUrl,
+        }),
+        cache: "no-store",
+      },
+    );
+
+    if (response.ok) {
+      await applySetCookie(response);
+      return await response.json();
+    }
+
+    const data = await response.json();
+    throw new Error(data.message || response.statusText);
+  },
   resetPassword: async (email: string, callbackUrl?: string) => {
     const response = await fetch(
       `${ENV_CONFIG.gobetterauth.url}/reset-password`,
@@ -95,7 +125,7 @@ export const goBetterAuthServer = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, callback_url: callbackUrl }),
         cache: "no-store",
-      }
+      },
     );
 
     if (response.ok) {
@@ -116,7 +146,7 @@ export const goBetterAuthServer = {
           new_password: newPassword,
         }),
         cache: "no-store",
-      }
+      },
     );
 
     if (response.ok) {
@@ -146,7 +176,7 @@ export const goBetterAuthServer = {
           callback_url: callbackUrl,
         }),
         cache: "no-store",
-      }
+      },
     );
 
     if (response.ok) {
