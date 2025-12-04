@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     if (!request.nextUrl.pathname.startsWith("/auth/sign-in")) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/sign-in";
