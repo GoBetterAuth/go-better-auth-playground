@@ -101,6 +101,18 @@ func main() {
 				},
 			},
 		}),
+		gobetterauthdomain.WithEndpointHooks(
+			gobetterauthdomain.EndpointHooksConfig{
+				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+					logger.Debug(fmt.Sprintf("in endpoint hook before %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					return nil
+				},
+				After: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+					logger.Debug(fmt.Sprintf("in endpoint hook after %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					return nil
+				},
+			},
+		),
 		gobetterauthdomain.WithDatabaseHooks(gobetterauthdomain.DatabaseHooksConfig{
 			Users: &gobetterauthdomain.UserDatabaseHooksConfig{
 				BeforeCreate: func(user *gobetterauthdomain.User) error {
