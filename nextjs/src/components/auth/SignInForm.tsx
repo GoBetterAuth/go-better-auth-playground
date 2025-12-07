@@ -3,6 +3,8 @@
 import { useAction } from 'next-safe-action/hooks';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -11,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from '@tanstack/react-form';
+import SocialProviderButtons from './SocialProviderButtons';
 
 const formSchema = z.object({
   email: z.email("Invalid email address"),
@@ -41,7 +43,7 @@ export default function SignInForm() {
           throw new Error(
             Object.entries(data.validationErrors)
               .map(([_, v]) => v)
-              .join(", ")
+              .join(", "),
           );
         }
         console.log(data);
@@ -63,81 +65,102 @@ export default function SignInForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-          className="grid gap-4"
-        >
-          <form.Field
-            name="email"
-            children={(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Email</Label>
-                <Input
-                  id={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.isTouched && !field.state.meta.isValid ? (
-                  <em className="text-red-500 text-sm">
-                    {field.state.meta.errors
-                      .map((error) => error?.message)
-                      .join(", ")}
-                  </em>
-                ) : null}
-              </div>
-            )}
-          />
+        <div className="grid gap-4">
+          <SocialProviderButtons />
 
-          <form.Field
-            name="password"
-            children={(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Password</Label>
-                <Input
-                  id={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.isTouched && !field.state.meta.isValid ? (
-                  <em className="text-red-500 text-sm">
-                    {field.state.meta.errors
-                      .map((error) => error?.message)
-                      .join(", ")}
-                  </em>
-                ) : null}
-              </div>
-            )}
-          />
-
-          <div className="text-right text-sm">
-            <Link href="/auth/reset-password" className="underline">
-              Forgot password?
-            </Link>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
           </div>
 
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
-              <Button type="submit" className="w-full" disabled={!canSubmit}>
-                {isSubmitting ? "Signing in..." : "Sign In"}
-              </Button>
-            )}
-          />
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/sign-up" className="underline">
-              Sign up
-            </Link>
-          </div>
-        </form>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <form.Field
+                name="email"
+                children={(field) => (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={field.name}>Email</Label>
+                    <Input
+                      id={field.name}
+                      type="email"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                    {field.state.meta.isTouched && !field.state.meta.isValid ? (
+                      <em className="text-red-500 text-sm">
+                        {field.state.meta.errors
+                          .map((error) => error?.message)
+                          .join(", ")}
+                      </em>
+                    ) : null}
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="password"
+                children={(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor={field.name}>Password</Label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                    {field.state.meta.isTouched && !field.state.meta.isValid ? (
+                      <em className="text-red-500 text-sm">
+                        {field.state.meta.errors
+                          .map((error) => error?.message)
+                          .join(", ")}
+                      </em>
+                    ) : null}
+                  </div>
+                )}
+              />
+
+              <div className="text-right text-sm">
+                <Link href="/auth/reset-password" className="underline">
+                  Forgot password?
+                </Link>
+              </div>
+
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
+                children={([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!canSubmit}
+                  >
+                    {isSubmitting ? "Signing in..." : "Sign In"}
+                  </Button>
+                )}
+              />
+
+              <div className="mt-4 text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <Link href="/auth/sign-up" className="underline">
+                  Sign up
+                </Link>
+              </div>
+            </div>
+          </form>
+        </div>
       </CardContent>
     </Card>
   );

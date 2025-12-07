@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
 import { SignOutButton } from '@/components/SignOutButton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { goBetterAuthServer } from '@/lib/gobetterauth-server';
 
@@ -53,9 +55,9 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </CardContent>
-        <div className="p-6 pt-0">
+        <CardFooter>
           <SignOutButton />
-        </div>
+        </CardFooter>
       </Card>
     </div>
   );

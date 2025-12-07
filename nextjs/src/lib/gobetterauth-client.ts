@@ -1,3 +1,4 @@
+import { OAuth2ProviderType } from '@/models';
 import { ENV_CONFIG } from './env-config';
 
 // Simulating GoBetterAuth Node.js SDK (coming soon)
@@ -53,6 +54,11 @@ export const goBetterAuthClient = {
 
       const data = await response.json();
       return Promise.reject(new Error(data.message || response.statusText));
+    },
+    social: (provider: OAuth2ProviderType, redirectTo?: string) => {
+      return `${ENV_CONFIG.gobetterauth.url}/oauth2/${provider}/login?redirect_to=${encodeURIComponent(
+        redirectTo || "/",
+      )}`;
     },
   },
   sendEmailVerification: async (callbackUrl?: string) => {

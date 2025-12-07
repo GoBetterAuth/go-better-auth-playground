@@ -101,6 +101,32 @@ func main() {
 				},
 			},
 		}),
+		gobetterauthdomain.WithSocialProviders(
+			gobetterauthdomain.SocialProvidersConfig{
+				Default: gobetterauthdomain.DefaultOAuth2ProvidersConfig{
+					Discord: &gobetterauthdomain.OAuth2Config{
+						ClientID:     utils.GetEnv("DISCORD_CLIENT_ID", ""),
+						ClientSecret: utils.GetEnv("DISCORD_CLIENT_SECRET", ""),
+						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+					},
+					GitHub: &gobetterauthdomain.OAuth2Config{
+						ClientID:     utils.GetEnv("GITHUB_CLIENT_ID", ""),
+						ClientSecret: utils.GetEnv("GITHUB_CLIENT_SECRET", ""),
+						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+					},
+					Google: &gobetterauthdomain.OAuth2Config{
+						ClientID:     utils.GetEnv("GOOGLE_CLIENT_ID", ""),
+						ClientSecret: utils.GetEnv("GOOGLE_CLIENT_SECRET", ""),
+						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+					},
+				},
+			},
+		),
+		gobetterauthdomain.WithTrustedOrigins(
+			gobetterauthdomain.TrustedOriginsConfig{
+				Origins: []string{"http://localhost:3000"},
+			},
+		),
 		gobetterauthdomain.WithEndpointHooks(
 			gobetterauthdomain.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {

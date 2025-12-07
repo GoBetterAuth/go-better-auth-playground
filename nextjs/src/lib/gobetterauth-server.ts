@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 
+import { OAuth2ProviderType } from '@/models';
 import { ENV_CONFIG } from './env-config';
 
 async function applySetCookie(response: Response) {
@@ -85,6 +86,11 @@ export const goBetterAuthServer = {
 
       const data = await response.json();
       throw new Error(data.message || response.statusText);
+    },
+    social: (provider: OAuth2ProviderType, redirectTo?: string) => {
+      return `${ENV_CONFIG.gobetterauth.url}/oauth2/${provider}/login?redirect_to=${encodeURIComponent(
+        redirectTo || "/",
+      )}`;
     },
   },
   sendEmailVerification: async (callbackUrl?: string) => {
