@@ -101,6 +101,11 @@ func main() {
 				},
 			},
 		}),
+		gobetterauthdomain.WithCSRF(
+			gobetterauthdomain.CSRFConfig{
+				Enabled: true,
+			},
+		),
 		gobetterauthdomain.WithSocialProviders(
 			gobetterauthdomain.SocialProvidersConfig{
 				Default: gobetterauthdomain.DefaultOAuth2ProvidersConfig{
@@ -184,21 +189,36 @@ func main() {
 			"message": "Hello, World!",
 		})
 	})
-	api.Any(
-		"/auth/*",
-		echo.WrapHandler(goBetterAuth.Handler()),
+
+	auth := api.Group(
+		"/auth",
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.OptionalAuthMiddleware()),
 	)
+	auth.Any("/*", echo.WrapHandler(goBetterAuth.Handler()))
 
-	protected := api.Group("/protected")
-	protected.Use(
+	protected := api.Group(
+		"/protected",
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.AuthMiddleware()),
+		echo.WrapMiddleware(goBetterAuth.CSRFMiddleware()),
 	)
-	protected.GET("/", func(c echo.Context) error {
+	protected.GET("", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]any{
 			"message": "Protected Route!",
+		})
+	})
+	// This route is protected by CSRF so requires csrf token cookie and header
+	protected.POST("", func(c echo.Context) error {
+		var body map[string]any
+		if err := c.Bind(&body); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]any{
+				"error": "Invalid JSON body",
+			})
+		}
+
+		return c.JSON(http.StatusOK, map[string]any{
+			"data": body,
 		})
 	})
 

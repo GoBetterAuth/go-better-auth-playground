@@ -50,7 +50,7 @@ export default function EmailChangeForm() {
           throw new Error(
             Object.entries(data.validationErrors)
               .map(([, v]) => v)
-              .join(", ")
+              .join(", "),
           );
         }
         setSentEmail(value.newEmail);
@@ -91,7 +91,7 @@ export default function EmailChangeForm() {
               </div>
             </div>
             <div className="text-center text-sm">
-              <Link href="/dashboard" className="text-blue-600 hover:underline">
+              <Link href="/dashboard" className="text-blue-600 underline">
                 Return to Dashboard
               </Link>
             </div>

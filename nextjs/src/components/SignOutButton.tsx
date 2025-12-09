@@ -3,7 +3,9 @@
 import { useAction } from 'next-safe-action/hooks';
 import { useRouter } from 'next/navigation';
 
-import { signOutAction } from '@/app/actions/auth.actions';
+import { toast } from 'sonner';
+
+import { signOutAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 
 export function SignOutButton() {
@@ -11,8 +13,23 @@ export function SignOutButton() {
   const { isPending, executeAsync } = useAction(signOutAction);
 
   const handleSignOut = async () => {
-    await executeAsync();
-    router.push("/auth/sign-in");
+    try {
+      const data = await executeAsync();
+      if (data.serverError) {
+        throw new Error(data.serverError);
+      }
+      if (data.validationErrors) {
+        throw new Error(
+          Object.entries(data.validationErrors)
+            .map(([_, v]) => v)
+            .join(", "),
+        );
+      }
+      router.push("/auth/sign-in");
+    } catch (error: any) {
+      console.error("Error during sign in:", error);
+      toast.error(error.message);
+    }
   };
 
   return (

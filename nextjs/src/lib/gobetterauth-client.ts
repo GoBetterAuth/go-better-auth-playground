@@ -1,186 +1,110 @@
 import { OAuth2ProviderType } from '@/models';
 import { ENV_CONFIG } from './env-config';
 
-// Simulating GoBetterAuth Node.js SDK (coming soon)
+function getCSRFCookieValue(): string {
+  // Simple client-side cookie parser
+  const match = document.cookie.match(/(?:^|; )gobetterauth_csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+type WrappedFetchOptions = {
+  method: "GET" | "POST";
+  body?: Record<string, unknown>;
+  callbackUrl?: string;
+  includeCSRF?: boolean;
+};
+
+async function wrappedFetch(
+  endpoint: string,
+  options: WrappedFetchOptions,
+): Promise<unknown> {
+  const url = `${ENV_CONFIG.gobetterauth.url}${endpoint}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (options.includeCSRF) {
+    const csrf = getCSRFCookieValue();
+    if (csrf) {
+      headers["X-GOBETTERAUTH-CSRF-TOKEN"] = csrf;
+    }
+  }
+
+  const bodyData = options.body || {};
+  if (options.callbackUrl) {
+    bodyData.callback_url = options.callbackUrl;
+  }
+
+  const body =
+    options.method === "POST" && Object.keys(bodyData).length > 0
+      ? JSON.stringify(bodyData)
+      : undefined;
+
+  const response = await fetch(url, {
+    method: options.method,
+    headers,
+    credentials: "include",
+    body,
+  });
+  if (response.ok) {
+    return await response.json();
+  }
+
+  const data = await response.json();
+  return Promise.reject(new Error(data.message || response.statusText));
+}
+
+// Simulating GoBetterAuth Node.js Client SDK (coming soon)
 export const goBetterAuthClient = {
   signUp: {
-    email: async (name: string, email: string, password: string) => {
-      const response = await fetch(
-        `${ENV_CONFIG.gobetterauth.url}/sign-up/email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-          }),
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-
-      const data = await response.json();
-      return Promise.reject(new Error(data.message || response.statusText));
-    },
+    email: async (name: string, email: string, password: string) =>
+      wrappedFetch("/sign-up/email", {
+        method: "POST",
+        body: { name, email, password },
+      }),
   },
   signIn: {
-    email: async (email: string, password: string) => {
-      const response = await fetch(
-        `${ENV_CONFIG.gobetterauth.url}/sign-in/email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-
-      const data = await response.json();
-      return Promise.reject(new Error(data.message || response.statusText));
-    },
-    social: (provider: OAuth2ProviderType, redirectTo?: string) => {
-      return `${ENV_CONFIG.gobetterauth.url}/oauth2/${provider}/login?redirect_to=${encodeURIComponent(
-        redirectTo || "/",
-      )}`;
-    },
-  },
-  sendEmailVerification: async (callbackUrl?: string) => {
-    const response = await fetch(
-      `${ENV_CONFIG.gobetterauth.url}/email-verification`,
-      {
+    email: async (email: string, password: string) =>
+      wrappedFetch("/sign-in/email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          callback_url: callbackUrl,
-        }),
-      },
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    const data = await response.json();
-    return Promise.reject(new Error(data.message || response.statusText));
+        body: { email, password },
+      }),
   },
-  resetPassword: async (email: string, callbackUrl?: string) => {
-    const response = await fetch(
-      `${ENV_CONFIG.gobetterauth.url}/reset-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, callback_url: callbackUrl }),
-      },
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    const data = await response.json();
-    return Promise.reject(new Error(data.message || response.statusText));
+  social: (provider: OAuth2ProviderType, redirectTo?: string) => {
+    const redirectUrl = encodeURIComponent(redirectTo || "/");
+    return `${ENV_CONFIG.gobetterauth.url}/oauth2/${provider}/login?redirect_to=${redirectUrl}`;
   },
-  changePassword: async (token: string, newPassword: string) => {
-    const response = await fetch(
-      `${ENV_CONFIG.gobetterauth.url}/change-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ token, new_password: newPassword }),
-      },
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    const data = await response.json();
-    return Promise.reject(new Error(data.message || response.statusText));
-  },
-  emailChange: async (newEmail: string, callbackUrl?: string) => {
-    const response = await fetch(
-      `${ENV_CONFIG.gobetterauth.url}/email-change`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: newEmail,
-          callback_url: callbackUrl,
-        }),
-      },
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    const data = await response.json();
-    return Promise.reject(new Error(data.message || response.statusText));
-  },
-  signOut: async () => {
-    const response = await fetch(`${ENV_CONFIG.gobetterauth.url}/sign-out`, {
+  sendEmailVerification: async (callbackUrl?: string) =>
+    wrappedFetch("/email-verification", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    const data = await response.json();
-    return Promise.reject(new Error(data.message || response.statusText));
-  },
-  getSession: async () => {
-    const response = await fetch(`${ENV_CONFIG.gobetterauth.url}/me`, {
+      body: {},
+      callbackUrl,
+      includeCSRF: true,
+    }),
+  resetPassword: async (email: string, callbackUrl?: string) =>
+    wrappedFetch("/reset-password", {
+      method: "POST",
+      body: { email },
+      callbackUrl,
+    }),
+  changePassword: async (token: string, newPassword: string) =>
+    wrappedFetch("/change-password", {
+      method: "POST",
+      body: { token, new_password: newPassword },
+    }),
+  emailChange: async (newEmail: string, callbackUrl?: string) =>
+    wrappedFetch("/email-change", {
+      method: "POST",
+      body: { email: newEmail },
+      callbackUrl,
+    }),
+  signOut: async () =>
+    wrappedFetch("/sign-out", {
+      method: "POST",
+      includeCSRF: true,
+    }),
+  getSession: async () =>
+    wrappedFetch("/me", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    }
-
-    return null;
-  },
+    }),
 };

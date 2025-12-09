@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 
 export default function SocialProviderButtons() {
   const handleSocialSignIn = (provider: OAuth2ProviderType): void => {
-    const url = goBetterAuthClient.signIn.social(
+    const url = goBetterAuthClient.social(
       provider,
       `${ENV_CONFIG.baseUrl}/dashboard`,
     );

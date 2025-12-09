@@ -46,7 +46,6 @@ export default function SignInForm() {
               .join(", "),
           );
         }
-        console.log(data);
         toast.success("Signed in successfully!");
         router.push("/dashboard");
       } catch (error: any) {
