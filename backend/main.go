@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -142,20 +143,20 @@ func main() {
 			},
 		),
 		// Uncomment to test out rate limiting
-		// gobetterauthdomain.WithRateLimit(
-		// 	gobetterauthdomain.RateLimitConfig{
-		// 		Enabled: true,
-		// 		Window:  10 * time.Second,
-		// 		Max:     5,
-		// 		CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
-		// 			"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
-		// 				return gobetterauthdomain.RateLimitCustomRule{
-		// 					Disabled: true,
-		// 				}
-		// 			},
-		// 		},
-		// 	},
-		// ),
+		gobetterauthdomain.WithRateLimit(
+			gobetterauthdomain.RateLimitConfig{
+				Enabled: true,
+				Window:  30 * time.Second,
+				Max:     5,
+				CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
+					"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
+						return gobetterauthdomain.RateLimitCustomRule{
+							Disabled: true,
+						}
+					},
+				},
+			},
+		),
 		gobetterauthdomain.WithEndpointHooks(
 			gobetterauthdomain.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
@@ -231,12 +232,64 @@ func main() {
 		})
 	})
 
-	auth := api.Group(
-		"/auth",
+	auth := api.Group("/auth")
+
+	// Custom routes attached to the auth handler for extensibility
+
+	// /api/auth/get-message
+	goBetterAuth.RegisterRoute(gobetterauthdomain.CustomRoute{
+		Method: "GET",
+		Path:   "get-message",
+		Middleware: []gobetterauthdomain.CustomRouteMiddleware{
+			goBetterAuth.AuthMiddleware(),
+		},
+		Handler: func(config *gobetterauthdomain.Config) http.Handler {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(map[string]any{
+					"message": fmt.Sprintf("%s: Hello from custom route!", config.AppName),
+				})
+			})
+			return handler
+		},
+	})
+
+	// /api/auth/send-message
+	goBetterAuth.RegisterRoute(gobetterauthdomain.CustomRoute{
+		Method: "POST",
+		Path:   "send-message",
+		Middleware: []gobetterauthdomain.CustomRouteMiddleware{
+			goBetterAuth.AuthMiddleware(),
+		},
+		Handler: func(config *gobetterauthdomain.Config) http.Handler {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				var body map[string]any
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]any{
+						"error": "Invalid JSON body",
+					})
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(map[string]any{
+					"message": fmt.Sprintf("%s: data received", config.AppName),
+					"data":    body,
+				})
+			})
+			return handler
+		},
+	})
+
+	auth.Any("/*",
+		echo.WrapHandler(goBetterAuth.Handler()),
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.OptionalAuthMiddleware()),
 	)
-	auth.Any("/*", echo.WrapHandler(goBetterAuth.Handler()))
 
 	protected := api.Group(
 		"/protected",
