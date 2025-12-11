@@ -145,7 +145,7 @@ func main() {
 		// gobetterauthdomain.WithRateLimit(
 		// 	gobetterauthdomain.RateLimitConfig{
 		// 		Enabled: true,
-		// 		Window:  30 * time.Second,
+		// 		Window:  10 * time.Second,
 		// 		Max:     5,
 		// 		CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
 		// 			"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
@@ -159,11 +159,23 @@ func main() {
 		gobetterauthdomain.WithEndpointHooks(
 			gobetterauthdomain.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
-					logger.Debug(fmt.Sprintf("in endpoint hook before %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
 					return nil
 				},
+				// Uncomment this to test out modifying responses
+				// Response: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+				// 	logger.Debug(fmt.Sprintf("in 'response' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+
+				// 	if ctx.Path == "/api/protected" {
+				// 		ctx.ResponseStatus = http.StatusTeapot
+				// 		ctx.ResponseHeaders["Content-Type"] = []string{"text/html"}
+				// 		ctx.ResponseBody = []byte("<h1>🍵 I'm a teapot! This response was modified by an endpoint hook.</h1>")
+				// 	}
+
+				// 	return nil
+				// },
 				After: func(ctx *gobetterauthdomain.EndpointHookContext) error {
-					logger.Debug(fmt.Sprintf("in endpoint hook after %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					logger.Debug(fmt.Sprintf("in 'after' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
 					return nil
 				},
 			},
@@ -231,6 +243,7 @@ func main() {
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.AuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.RateLimitMiddleware()),
+		echo.WrapMiddleware(goBetterAuth.EndpointHooksMiddleware()),
 	)
 	protected.GET("", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]any{

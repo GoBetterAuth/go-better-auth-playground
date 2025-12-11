@@ -3,7 +3,7 @@ module github.com/GoBetterAuth/go-better-auth-playground
 go 1.25.4
 
 require (
-	github.com/GoBetterAuth/go-better-auth v1.0.5
+	github.com/GoBetterAuth/go-better-auth v1.0.8
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/redis/go-redis/v9 v9.16.0

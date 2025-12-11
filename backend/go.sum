@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/GoBetterAuth/go-better-auth v1.0.5 h1:mhy9ZubvRJTtbU97+PfUDeq5oC/6OQW0HotjfppvZ3g=
-github.com/GoBetterAuth/go-better-auth v1.0.5/go.mod h1:7IL/xCWh7yGh/cuSvIdprIPHWvjYmZFei0sFn8W4ulY=
+github.com/GoBetterAuth/go-better-auth v1.0.8 h1:oiTEJNCJZl/nYFy7aBfrf7R022hJci298kcIJ3nTyYQ=
+github.com/GoBetterAuth/go-better-auth v1.0.8/go.mod h1:7EdB72DM7hVAzZeQuqBWruU3wniqW0o2nWfIa0LqJ1k=
 github.com/alexedwards/argon2id v1.0.0 h1:wJzDx66hqWX7siL/SRUmgz3F8YMrd/nfX/xHHcQQP0w=
 github.com/alexedwards/argon2id v1.0.0/go.mod h1:tYKkqIjzXvZdzPvADMWOEZ+l6+BD6CtBXMj5fnJppiw=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
