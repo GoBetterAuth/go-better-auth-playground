@@ -104,10 +104,10 @@ CREATE INDEX IF NOT EXISTS idx_verifications_type ON verifications(type);
 CREATE INDEX IF NOT EXISTS idx_verifications_expires_at ON verifications(expires_at);
 
 -- ---------------------------
--- SECONDARY STORAGE (key-value storage e.g. sessions, rate limiting, etc.)
+-- KEY VALUE STORE (key-value storage e.g. sessions, rate limiting, etc.)
 -- ---------------------------
 
-CREATE TABLE IF NOT EXISTS secondary_storage (
+CREATE TABLE IF NOT EXISTS key_value_store (
   key VARCHAR(255) PRIMARY KEY,
   value TEXT NOT NULL,
   expires_at TIMESTAMP WITH TIME ZONE,
@@ -115,11 +115,11 @@ CREATE TABLE IF NOT EXISTS secondary_storage (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_secondary_storage_expires_at ON secondary_storage(expires_at);
+CREATE INDEX IF NOT EXISTS idx_key_value_store_expires_at ON key_value_store(expires_at);
 
-DROP TRIGGER IF EXISTS update_secondary_storage_updated_at ON secondary_storage;
-CREATE TRIGGER update_secondary_storage_updated_at
-  BEFORE UPDATE ON secondary_storage
+DROP TRIGGER IF EXISTS update_key_value_store_updated_at ON key_value_store;
+CREATE TRIGGER update_key_value_store_updated_at
+  BEFORE UPDATE ON key_value_store
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 

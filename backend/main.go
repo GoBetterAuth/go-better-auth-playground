@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	gobetterauth "github.com/GoBetterAuth/go-better-auth"
+	"github.com/GoBetterAuth/go-better-auth-playground/storage"
 	"github.com/GoBetterAuth/go-better-auth-playground/utils"
 	gobetterauthdomain "github.com/GoBetterAuth/go-better-auth/pkg/domain"
 )
@@ -47,6 +48,8 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
+	// Init GoBetterAuth config
+
 	config := gobetterauthdomain.NewConfig(
 		gobetterauthdomain.WithAppName("GoBetterAuthPlayground"),
 		gobetterauthdomain.WithBasePath("/api/auth"),
@@ -54,6 +57,12 @@ func main() {
 			Provider:         "postgres",
 			ConnectionString: os.Getenv("DATABASE_URL"),
 		}),
+		gobetterauthdomain.WithSecondaryStorage(
+			gobetterauthdomain.SecondaryStorageConfig{
+				Type:    gobetterauthdomain.SecondaryStorageTypeCustom,
+				Storage: storage.NewRedisSecondaryStorage(),
+			},
+		),
 		gobetterauthdomain.WithEmailPassword(gobetterauthdomain.EmailPasswordConfig{
 			Enabled:                  true,
 			DisableSignUp:            false,
@@ -132,6 +141,21 @@ func main() {
 				Origins: []string{"http://localhost:3000"},
 			},
 		),
+		// Uncomment to test out rate limiting
+		// gobetterauthdomain.WithRateLimit(
+		// 	gobetterauthdomain.RateLimitConfig{
+		// 		Enabled: true,
+		// 		Window:  30 * time.Second,
+		// 		Max:     5,
+		// 		CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
+		// 			"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
+		// 				return gobetterauthdomain.RateLimitCustomRule{
+		// 					Disabled: true,
+		// 				}
+		// 			},
+		// 		},
+		// 	},
+		// ),
 		gobetterauthdomain.WithEndpointHooks(
 			gobetterauthdomain.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
@@ -171,11 +195,16 @@ func main() {
 			},
 		}),
 	)
+
+	// Init GoBetterAuth instance and run migrations
+
 	goBetterAuth := gobetterauth.New(config, nil)
 	// You can uncomment the following 2 lines to drop all migrations (i.e., reset the database).
 	// goBetterAuth.DropMigrations()
 	// return
 	goBetterAuth.RunMigrations()
+
+	// Choose your api framework of choice to wrap GoBetterAuth (we use Echo in this example)
 
 	echoInstance := echo.New()
 	if err != nil {
@@ -201,7 +230,7 @@ func main() {
 		"/protected",
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.AuthMiddleware()),
-		echo.WrapMiddleware(goBetterAuth.CSRFMiddleware()),
+		echo.WrapMiddleware(goBetterAuth.RateLimitMiddleware()),
 	)
 	protected.GET("", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]any{
@@ -209,7 +238,7 @@ func main() {
 		})
 	})
 	// This route is protected by CSRF so requires csrf token cookie and header
-	protected.POST("", func(c echo.Context) error {
+	protected.POST("/data", func(c echo.Context) error {
 		var body map[string]any
 		if err := c.Bind(&body); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]any{
@@ -220,7 +249,7 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]any{
 			"data": body,
 		})
-	})
+	}, echo.WrapMiddleware(goBetterAuth.CSRFMiddleware()))
 
 	echoInstance.Logger.Fatal(echoInstance.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
 }

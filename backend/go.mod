@@ -3,6 +3,7 @@ module github.com/GoBetterAuth/go-better-auth-playground
 go 1.25.4
 
 require (
+	github.com/GoBetterAuth/go-better-auth v1.0.5
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/redis/go-redis/v9 v9.16.0
@@ -34,6 +35,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/net v0.45.0 // indirect
+	golang.org/x/oauth2 v0.33.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect

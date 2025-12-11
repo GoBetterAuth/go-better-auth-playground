@@ -84,10 +84,10 @@ CREATE INDEX IF NOT EXISTS idx_verifications_type ON verifications(type);
 CREATE INDEX IF NOT EXISTS idx_verifications_expires_at ON verifications(expires_at);
 
 -- ---------------------------
--- SECONDARY STORAGE (key-value storage e.g. sessions, rate limiting, etc.)
+-- KEY VALUE STORE (key-value storage e.g. sessions, rate limiting, etc.)
 -- ---------------------------
 
-CREATE TABLE IF NOT EXISTS secondary_storage (
+CREATE TABLE IF NOT EXISTS key_value_store (
   key VARCHAR(255) PRIMARY KEY,
   value TEXT NOT NULL,
   expires_at TIMESTAMP,
@@ -95,4 +95,4 @@ CREATE TABLE IF NOT EXISTS secondary_storage (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_secondary_storage_expires_at ON secondary_storage(expires_at);
+CREATE INDEX IF NOT EXISTS idx_key_value_store_expires_at ON key_value_store(expires_at);
