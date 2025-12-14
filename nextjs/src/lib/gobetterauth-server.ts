@@ -195,7 +195,7 @@ export const goBetterAuthServer = {
     // Explicitly remove cookies on the frontend (Next.js cookies API does not auto-remove expired cookies)
     // TODO: the sdk should be able to allow the user to specify cookie names as it can be customised so that the correct cookies are removed.
     const cookieStore = await cookies();
-    cookieStore.delete("go-better-auth.session_token");
+    cookieStore.delete("gobetterauth.session_token");
     cookieStore.delete("gobetterauth_csrf");
 
     return result;

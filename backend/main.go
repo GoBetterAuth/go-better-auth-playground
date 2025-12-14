@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -143,20 +142,20 @@ func main() {
 			},
 		),
 		// Uncomment to test out rate limiting
-		gobetterauthdomain.WithRateLimit(
-			gobetterauthdomain.RateLimitConfig{
-				Enabled: true,
-				Window:  30 * time.Second,
-				Max:     5,
-				CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
-					"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
-						return gobetterauthdomain.RateLimitCustomRule{
-							Disabled: true,
-						}
-					},
-				},
-			},
-		),
+		// gobetterauthdomain.WithRateLimit(
+		// 	gobetterauthdomain.RateLimitConfig{
+		// 		Enabled: true,
+		// 		Window:  10 * time.Second,
+		// 		Max:     5,
+		// 		CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
+		// 			"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
+		// 				return gobetterauthdomain.RateLimitCustomRule{
+		// 					Disabled: true,
+		// 				}
+		// 			},
+		// 		},
+		// 	},
+		// ),
 		gobetterauthdomain.WithEndpointHooks(
 			gobetterauthdomain.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
@@ -211,7 +210,7 @@ func main() {
 
 	// Init GoBetterAuth instance and run migrations
 
-	goBetterAuth := gobetterauth.New(config, nil)
+	goBetterAuth := gobetterauth.New(config)
 	// You can uncomment the following 2 lines to drop all migrations (i.e., reset the database).
 	// goBetterAuth.DropMigrations()
 	// return
@@ -232,7 +231,11 @@ func main() {
 		})
 	})
 
-	auth := api.Group("/auth")
+	auth := api.Group(
+		"/auth",
+		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
+		echo.WrapMiddleware(goBetterAuth.OptionalAuthMiddleware()),
+	)
 
 	// Custom routes attached to the auth handler for extensibility
 
@@ -285,14 +288,11 @@ func main() {
 		},
 	})
 
-	auth.Any("/*",
-		echo.WrapHandler(goBetterAuth.Handler()),
-		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
-		echo.WrapMiddleware(goBetterAuth.OptionalAuthMiddleware()),
-	)
+	auth.Any("/*", echo.WrapHandler(goBetterAuth.Handler()))
 
 	protected := api.Group(
 		"/protected",
+		// The order of middleware matters here
 		echo.WrapMiddleware(goBetterAuth.CorsAuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.AuthMiddleware()),
 		echo.WrapMiddleware(goBetterAuth.RateLimitMiddleware()),
