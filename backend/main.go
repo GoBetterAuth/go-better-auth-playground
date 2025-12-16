@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,9 +14,14 @@ import (
 	"github.com/labstack/echo/v4"
 
 	gobetterauth "github.com/GoBetterAuth/go-better-auth"
+	gobetterauthconfig "github.com/GoBetterAuth/go-better-auth/config"
+	gobetterauthevents "github.com/GoBetterAuth/go-better-auth/events"
+	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/models"
+
+	"github.com/GoBetterAuth/go-better-auth-playground/events"
+	loggerplugin "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger"
 	"github.com/GoBetterAuth/go-better-auth-playground/storage"
 	"github.com/GoBetterAuth/go-better-auth-playground/utils"
-	gobetterauthdomain "github.com/GoBetterAuth/go-better-auth/pkg/domain"
 )
 
 // Feel free to change this implementation to use your own mailer service e.g. SendGrid/Resend etc.
@@ -48,27 +54,29 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
+	// -------------------------------------
 	// Init GoBetterAuth config
+	// -------------------------------------
 
-	config := gobetterauthdomain.NewConfig(
-		gobetterauthdomain.WithAppName("GoBetterAuthPlayground"),
-		gobetterauthdomain.WithBasePath("/api/auth"),
-		gobetterauthdomain.WithDatabase(gobetterauthdomain.DatabaseConfig{
+	config := gobetterauthconfig.NewConfig(
+		gobetterauthconfig.WithAppName("GoBetterAuthPlayground"),
+		gobetterauthconfig.WithBasePath("/api/auth"),
+		gobetterauthconfig.WithDatabase(gobetterauthmodels.DatabaseConfig{
 			Provider:         "postgres",
 			ConnectionString: os.Getenv("DATABASE_URL"),
 		}),
-		gobetterauthdomain.WithSecondaryStorage(
-			gobetterauthdomain.SecondaryStorageConfig{
-				Type:    gobetterauthdomain.SecondaryStorageTypeCustom,
+		gobetterauthconfig.WithSecondaryStorage(
+			gobetterauthmodels.SecondaryStorageConfig{
+				Type:    gobetterauthmodels.SecondaryStorageTypeCustom,
 				Storage: storage.NewRedisSecondaryStorage(),
 			},
 		),
-		gobetterauthdomain.WithEmailPassword(gobetterauthdomain.EmailPasswordConfig{
+		gobetterauthconfig.WithEmailPassword(gobetterauthmodels.EmailPasswordConfig{
 			Enabled:                  true,
 			DisableSignUp:            false,
 			RequireEmailVerification: true,
 			AutoSignIn:               true,
-			SendResetPasswordEmail: func(user gobetterauthdomain.User, url, token string) error {
+			SendResetPasswordEmail: func(user gobetterauthmodels.User, url string, token string) error {
 				if err := sendEmail(
 					user.Email,
 					"Reset your password",
@@ -80,9 +88,9 @@ func main() {
 				return nil
 			},
 		}),
-		gobetterauthdomain.WithEmailVerification(gobetterauthdomain.EmailVerificationConfig{
+		gobetterauthconfig.WithEmailVerification(gobetterauthmodels.EmailVerificationConfig{
 			SendOnSignUp: true,
-			SendVerificationEmail: func(user gobetterauthdomain.User, url string, token string) error {
+			SendVerificationEmail: func(user gobetterauthmodels.User, url string, token string) error {
 				if err := sendEmail(
 					user.Email,
 					"Verify your email",
@@ -94,10 +102,10 @@ func main() {
 				return nil
 			},
 		}),
-		gobetterauthdomain.WithUser(gobetterauthdomain.UserConfig{
-			ChangeEmail: gobetterauthdomain.ChangeEmailConfig{
+		gobetterauthconfig.WithUser(gobetterauthmodels.UserConfig{
+			ChangeEmail: gobetterauthmodels.ChangeEmailConfig{
 				Enabled: true,
-				SendEmailChangeVerificationEmail: func(user gobetterauthdomain.User, newEmail string, url string, token string) error {
+				SendEmailChangeVerificationEmail: func(user gobetterauthmodels.User, newEmail string, url string, token string) error {
 					if err := sendEmail(
 						user.Email,
 						"You requested to change your email",
@@ -110,25 +118,25 @@ func main() {
 				},
 			},
 		}),
-		gobetterauthdomain.WithCSRF(
-			gobetterauthdomain.CSRFConfig{
+		gobetterauthconfig.WithCSRF(
+			gobetterauthmodels.CSRFConfig{
 				Enabled: true,
 			},
 		),
-		gobetterauthdomain.WithSocialProviders(
-			gobetterauthdomain.SocialProvidersConfig{
-				Default: gobetterauthdomain.DefaultOAuth2ProvidersConfig{
-					Discord: &gobetterauthdomain.OAuth2Config{
+		gobetterauthconfig.WithSocialProviders(
+			gobetterauthmodels.SocialProvidersConfig{
+				Default: gobetterauthmodels.DefaultOAuth2ProvidersConfig{
+					Discord: &gobetterauthmodels.OAuth2Config{
 						ClientID:     utils.GetEnv("DISCORD_CLIENT_ID", ""),
 						ClientSecret: utils.GetEnv("DISCORD_CLIENT_SECRET", ""),
 						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
 					},
-					GitHub: &gobetterauthdomain.OAuth2Config{
+					GitHub: &gobetterauthmodels.OAuth2Config{
 						ClientID:     utils.GetEnv("GITHUB_CLIENT_ID", ""),
 						ClientSecret: utils.GetEnv("GITHUB_CLIENT_SECRET", ""),
 						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
 					},
-					Google: &gobetterauthdomain.OAuth2Config{
+					Google: &gobetterauthmodels.OAuth2Config{
 						ClientID:     utils.GetEnv("GOOGLE_CLIENT_ID", ""),
 						ClientSecret: utils.GetEnv("GOOGLE_CLIENT_SECRET", ""),
 						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
@@ -136,8 +144,8 @@ func main() {
 				},
 			},
 		),
-		gobetterauthdomain.WithTrustedOrigins(
-			gobetterauthdomain.TrustedOriginsConfig{
+		gobetterauthconfig.WithTrustedOrigins(
+			gobetterauthmodels.TrustedOriginsConfig{
 				Origins: []string{"http://localhost:3000"},
 			},
 		),
@@ -156,14 +164,14 @@ func main() {
 		// 		},
 		// 	},
 		// ),
-		gobetterauthdomain.WithEndpointHooks(
-			gobetterauthdomain.EndpointHooksConfig{
-				Before: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+		gobetterauthconfig.WithEndpointHooks(
+			gobetterauthmodels.EndpointHooksConfig{
+				Before: func(ctx *gobetterauthmodels.EndpointHookContext) error {
 					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
 					return nil
 				},
 				// Uncomment this to test out modifying responses
-				// Response: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+				// Response: func(ctx *gobetterauthmodels.EndpointHookContext) error {
 				// 	logger.Debug(fmt.Sprintf("in 'response' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
 
 				// 	if ctx.Path == "/api/protected" {
@@ -174,41 +182,63 @@ func main() {
 
 				// 	return nil
 				// },
-				After: func(ctx *gobetterauthdomain.EndpointHookContext) error {
+				After: func(ctx *gobetterauthmodels.EndpointHookContext) error {
 					logger.Debug(fmt.Sprintf("in 'after' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
 					return nil
 				},
 			},
 		),
-		gobetterauthdomain.WithDatabaseHooks(gobetterauthdomain.DatabaseHooksConfig{
-			Users: &gobetterauthdomain.UserDatabaseHooksConfig{
-				BeforeCreate: func(user *gobetterauthdomain.User) error {
+		gobetterauthconfig.WithDatabaseHooks(gobetterauthmodels.DatabaseHooksConfig{
+			Users: &gobetterauthmodels.UserDatabaseHooksConfig{
+				BeforeCreate: func(user *gobetterauthmodels.User) error {
 					logger.Debug(fmt.Sprintf("in DB hook before creating user with email: %s", user.Email))
 					return nil
 				},
 			},
 		}),
-		gobetterauthdomain.WithEventHooks(gobetterauthdomain.EventHooksConfig{
-			OnUserSignedUp: func(user gobetterauthdomain.User) error {
+		gobetterauthconfig.WithEventHooks(gobetterauthmodels.EventHooksConfig{
+			OnUserSignedUp: func(user gobetterauthmodels.User) error {
 				logger.Info(fmt.Sprintf("User signed up with email: %s", user.Email))
 				return nil
 			},
-			OnEmailVerified: func(user gobetterauthdomain.User) error {
+			OnEmailVerified: func(user gobetterauthmodels.User) error {
 				logger.Info(fmt.Sprintf("Email verified for user with email: %s", user.Email))
 				return nil
 			},
-			OnEmailChanged: func(user gobetterauthdomain.User) error {
+			OnEmailChanged: func(user gobetterauthmodels.User) error {
 				logger.Info(fmt.Sprintf("User with email %s changed their email", user.Email))
 				return nil
 			},
-			OnPasswordChanged: func(user gobetterauthdomain.User) error {
+			OnPasswordChanged: func(user gobetterauthmodels.User) error {
 				logger.Info(fmt.Sprintf("User with email %s changed their password", user.Email))
 				return nil
 			},
 		}),
+		gobetterauthconfig.WithEventBus(
+			gobetterauthmodels.EventBusConfig{
+				Enabled: true,
+				Prefix:  "gobetterauthplayground.",
+				// Uncomment to test out using watermill with Kafka/Redpanda as the event bus
+				PubSub: gobetterauthevents.NewWatermillPubSub(
+					events.NewKafkaPublisher(),
+					events.NewKafkaSubscriber(),
+				),
+			},
+		),
+		gobetterauthconfig.WithPlugins(
+			gobetterauthmodels.PluginsConfig{
+				Plugins: []gobetterauthmodels.Plugin{
+					loggerplugin.NewLoggerPlugin(gobetterauthmodels.PluginConfig{
+						Enabled: true,
+					}),
+				},
+			},
+		),
 	)
 
+	// -------------------------------------
 	// Init GoBetterAuth instance and run migrations
+	// -------------------------------------
 
 	goBetterAuth := gobetterauth.New(config)
 	// You can uncomment the following 2 lines to drop all migrations (i.e., reset the database).
@@ -216,7 +246,61 @@ func main() {
 	// return
 	goBetterAuth.RunMigrations()
 
+	if id, err := goBetterAuth.EventBus.Subscribe(
+		gobetterauthmodels.EventUserSignedUp,
+		func(ctx context.Context, event gobetterauthmodels.Event) error {
+			var data map[string]any
+			if err := json.Unmarshal(event.Payload, &data); err != nil {
+				slog.Error("failed to unmarshal json", "error", err)
+				return err
+			}
+
+			if userId, ok := data["id"]; ok {
+				if !ok {
+					slog.Error("user ID not found in event payload")
+					return fmt.Errorf("user ID not found in event payload")
+				}
+
+				slog.Info("EventUserSignedUp event received in main()", "user_id", userId)
+			}
+
+			return nil
+		}); err != nil {
+		slog.Error("failed to subscribe to EventUserSignedUp", "error", err)
+		return
+	} else {
+		slog.Info("subscribed to EventUserSignedUp in main()", "subscription_id", id)
+	}
+
+	if id, err := goBetterAuth.EventBus.Subscribe(
+		gobetterauthmodels.EventUserLoggedIn,
+		func(ctx context.Context, event gobetterauthmodels.Event) error {
+			var data map[string]any
+			if err := json.Unmarshal(event.Payload, &data); err != nil {
+				slog.Error("failed to unmarshal json", "error", err)
+				return err
+			}
+
+			if userId, ok := data["id"]; ok {
+				if !ok {
+					slog.Error("user ID not found in event payload")
+					return fmt.Errorf("user ID not found in event payload")
+				}
+
+				slog.Info("EventUserLoggedIn event received in main()", "user_id", userId)
+			}
+
+			return nil
+		}); err != nil {
+		slog.Error("failed to subscribe to EventUserLoggedIn", "error", err)
+		return
+	} else {
+		slog.Info("subscribed to EventUserLoggedIn in main()", "subscription_id", id)
+	}
+
+	// -------------------------------------
 	// Choose your api framework of choice to wrap GoBetterAuth (we use Echo in this example)
+	// -------------------------------------
 
 	echoInstance := echo.New()
 	if err != nil {
@@ -237,16 +321,19 @@ func main() {
 		echo.WrapMiddleware(goBetterAuth.OptionalAuthMiddleware()),
 	)
 
-	// Custom routes attached to the auth handler for extensibility
+	// -------------------------------------
+	// Custom routes attached to the auth handler for extensibility.
+	// This must be done before calling goBetterAuth.Handler()
+	// -------------------------------------
 
 	// /api/auth/get-message
-	goBetterAuth.RegisterRoute(gobetterauthdomain.CustomRoute{
+	goBetterAuth.RegisterRoute(gobetterauthmodels.CustomRoute{
 		Method: "GET",
-		Path:   "get-message",
-		Middleware: []gobetterauthdomain.CustomRouteMiddleware{
+		Path:   "/get-message",
+		Middleware: []gobetterauthmodels.CustomRouteMiddleware{
 			goBetterAuth.AuthMiddleware(),
 		},
-		Handler: func(config *gobetterauthdomain.Config) http.Handler {
+		Handler: func(config *gobetterauthmodels.Config) http.Handler {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(200)
@@ -259,13 +346,14 @@ func main() {
 	})
 
 	// /api/auth/send-message
-	goBetterAuth.RegisterRoute(gobetterauthdomain.CustomRoute{
+	goBetterAuth.RegisterRoute(gobetterauthmodels.CustomRoute{
 		Method: "POST",
-		Path:   "send-message",
-		Middleware: []gobetterauthdomain.CustomRouteMiddleware{
+		Path:   "/send-message",
+		Middleware: []gobetterauthmodels.CustomRouteMiddleware{
 			goBetterAuth.AuthMiddleware(),
+			goBetterAuth.CSRFMiddleware(),
 		},
-		Handler: func(config *gobetterauthdomain.Config) http.Handler {
+		Handler: func(config *gobetterauthmodels.Config) http.Handler {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var body map[string]any
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -288,6 +376,12 @@ func main() {
 		},
 	})
 
+	// -------------------------------------
+
+	// -------------------------------------
+	// Attach GoBetterAuth handler to your chosen framework and run your server
+	// -------------------------------------
+
 	auth.Any("/*", echo.WrapHandler(goBetterAuth.Handler()))
 
 	protected := api.Group(
@@ -299,7 +393,15 @@ func main() {
 		echo.WrapMiddleware(goBetterAuth.EndpointHooksMiddleware()),
 	)
 	protected.GET("", func(c echo.Context) error {
+		userId, ok := goBetterAuth.GetUserIDFromContext(c.Request().Context())
+		if !ok {
+			return c.JSON(http.StatusInternalServerError, map[string]any{
+				"error": "Failed to get user ID from context",
+			})
+		}
+		slog.Debug("User ID from context:", slog.String("user_id", userId))
 		return c.JSON(http.StatusOK, map[string]any{
+			"userId":  userId,
 			"message": "Protected Route!",
 		})
 	})

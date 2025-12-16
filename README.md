@@ -15,7 +15,7 @@ This repository showcases a full-stack authentication system using Go for the ba
    - Ensure Docker and Docker Compose are installed.
    - Copy `docker-compose.env.example` to `docker-compose.env`.
    - Update environment variables in `docker-compose.env` as needed.
-   - Start services: `docker compose up -d`
+   - Start services: `docker compose down -v && docker compose --env-file=docker-compose.env up -d`
 3. **Backend Setup**
    - Copy `backend/.env.example` to `backend/.env`.
    - Update environment variables in `backend/.env`.

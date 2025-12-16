@@ -20,6 +20,10 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
+            <Label className="text-sm font-medium">ID</Label>
+            <p className="text-sm text-muted-foreground">{user.id}</p>
+          </div>
+          <div>
             <Label className="text-sm font-medium">Name</Label>
             <p className="text-sm text-muted-foreground">{user.name}</p>
           </div>
