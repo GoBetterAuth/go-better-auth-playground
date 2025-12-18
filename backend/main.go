@@ -15,10 +15,8 @@ import (
 
 	gobetterauth "github.com/GoBetterAuth/go-better-auth"
 	gobetterauthconfig "github.com/GoBetterAuth/go-better-auth/config"
-	gobetterauthevents "github.com/GoBetterAuth/go-better-auth/events"
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/models"
 
-	"github.com/GoBetterAuth/go-better-auth-playground/events"
 	loggerplugin "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger"
 	"github.com/GoBetterAuth/go-better-auth-playground/storage"
 	"github.com/GoBetterAuth/go-better-auth-playground/utils"
@@ -167,20 +165,26 @@ func main() {
 		gobetterauthconfig.WithEndpointHooks(
 			gobetterauthmodels.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthmodels.EndpointHookContext) error {
-					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Method, ctx.Path))
 
 					// Uncomment this to test out custom validation before a handler is executed
 					// if ctx.Path == "/api/auth/sign-up/email" {
-					// 	email, ok := ctx.Body["email"].(string)
-					// 	if !ok {
-					// 		return fmt.Errorf("email is required")
+					// 	if ctx.Method != "POST" {
+					// 		return fmt.Errorf("only POST is allowed for %s", ctx.Path)
 					// 	}
 
-					// 	if email[len(email)-10:] != "@gmail.com" {
-					// 		ctx.ResponseStatus = http.StatusBadRequest
-					// 		ctx.ResponseHeaders["Content-Type"] = []string{"text/html"}
-					// 		ctx.ResponseBody = []byte("<h1>Only @gmail.com emails are allowed</h1>")
-					// 		// We return a nil error here so that the endpoint hook by default doesn't override our custom response and return json.
+					// 	email, ok := ctx.Body["email"].(string)
+					// 	if !ok {
+					// 		return fmt.Errorf("email is required in request body")
+					// 	}
+
+					// 	if !strings.HasSuffix(email, "@gmail.com") {
+					// 		// Short-circuit with custom error response
+					// 		ctx.ResponseHeaders["Content-Type"] = []string{"application/json"}
+					// 		ctx.ResponseStatus = http.StatusForbidden
+					// 		ctx.ResponseBody = []byte(`{"message": "Only @gmail.com email addresses are allowed to sign up."}`)
+					// 		ctx.Handled = true
+					// 		// Do not return an error here
 					// 		return nil
 					// 	}
 					// }
@@ -189,7 +193,7 @@ func main() {
 				},
 				// Uncomment this to test out modifying responses
 				// Response: func(ctx *gobetterauthmodels.EndpointHookContext) error {
-				// 	logger.Debug(fmt.Sprintf("in 'response' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+				// 	logger.Debug(fmt.Sprintf("in 'response' endpoint hook %s %s", ctx.Method, ctx.Path))
 
 				// 	if ctx.Path == "/api/protected" {
 				// 		ctx.ResponseStatus = http.StatusTeapot
@@ -200,7 +204,8 @@ func main() {
 				// 	return nil
 				// },
 				After: func(ctx *gobetterauthmodels.EndpointHookContext) error {
-					logger.Debug(fmt.Sprintf("in 'after' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+					logger.Debug(fmt.Sprintf("in 'after' endpoint hook %s %s", ctx.Method, ctx.Path))
+
 					return nil
 				},
 			},
@@ -235,11 +240,12 @@ func main() {
 			gobetterauthmodels.EventBusConfig{
 				Enabled: true,
 				Prefix:  "gobetterauthplayground.",
-				// Uncomment to test out using watermill with Kafka/Redpanda as the event bus
-				PubSub: gobetterauthevents.NewWatermillPubSub(
-					events.NewKafkaPublisher(),
-					events.NewKafkaSubscriber(),
-				),
+				// Uncomment to test out using watermill with Kafka/Redpanda as the event bus.
+				// The kafka publisher and subscriber are imported from this project's module.
+				// PubSub: gobetterauthevents.NewWatermillPubSub(
+				// 	events.NewKafkaPublisher(),
+				// 	events.NewKafkaSubscriber(),
+				// ),
 			},
 		),
 		gobetterauthconfig.WithPlugins(

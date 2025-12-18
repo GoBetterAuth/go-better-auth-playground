@@ -29,12 +29,12 @@ export const signUpAction = actionClient
   .action(async ({ parsedInput }) => {
     try {
       const data: { token: string; user: any } =
-        await goBetterAuthServer.signUp.email(
+        (await goBetterAuthServer.signUp.email(
           parsedInput.name,
           parsedInput.email,
           parsedInput.password,
           `${ENV_CONFIG.baseUrl}/dashboard`,
-        );
+        )) as any;
 
       return data;
     } catch (error) {
@@ -66,11 +66,11 @@ export const signInAction = actionClient
   .action(async ({ parsedInput }) => {
     try {
       const data: { token: string; user: any } =
-        await goBetterAuthServer.signIn.email(
+        (await goBetterAuthServer.signIn.email(
           parsedInput.email,
           parsedInput.password,
           `${ENV_CONFIG.baseUrl}/dashboard`,
-        );
+        )) as any;
 
       return data;
     } catch (error) {
@@ -93,9 +93,9 @@ export const sendEmailVerificationAction = actionClient
   .action(async () => {
     try {
       const data: { message: string } =
-        await goBetterAuthServer.sendEmailVerification(
+        (await goBetterAuthServer.sendEmailVerification(
           `${ENV_CONFIG.baseUrl}/dashboard`,
-        );
+        )) as any;
 
       return data;
     } catch (error) {

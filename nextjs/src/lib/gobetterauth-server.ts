@@ -224,7 +224,6 @@ export const goBetterAuthServer = {
 
       return validationResult;
     } catch (error: any) {
-      console.error(error);
       return null;
     }
   },

@@ -7,7 +7,6 @@ export async function proxy(request: NextRequest) {
     const data = await goBetterAuthServer.getSession();
 
     const isAuthenticated = !!data?.user;
-
     if (isAuthenticated) {
       if (!data.user.emailVerified) {
         if (!request.nextUrl.pathname.startsWith("/auth/email-verification")) {
