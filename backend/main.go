@@ -148,14 +148,14 @@ func main() {
 			},
 		),
 		// Uncomment to test out rate limiting
-		// gobetterauthdomain.WithRateLimit(
-		// 	gobetterauthdomain.RateLimitConfig{
+		// gobetterauthconfig.WithRateLimit(
+		// 	gobetterauthmodels.RateLimitConfig{
 		// 		Enabled: true,
 		// 		Window:  10 * time.Second,
 		// 		Max:     5,
-		// 		CustomRules: map[string]gobetterauthdomain.RateLimitCustomRuleFunc{
-		// 			"/api/protected": func(req *http.Request) gobetterauthdomain.RateLimitCustomRule {
-		// 				return gobetterauthdomain.RateLimitCustomRule{
+		// 		CustomRules: map[string]gobetterauthmodels.RateLimitCustomRuleFunc{
+		// 			"/api/protected": func(req *http.Request) gobetterauthmodels.RateLimitCustomRule {
+		// 				return gobetterauthmodels.RateLimitCustomRule{
 		// 					Disabled: true,
 		// 				}
 		// 			},
@@ -392,17 +392,16 @@ func main() {
 		Method: "GET",
 		Path:   "/get-message",
 		Middleware: []gobetterauthmodels.CustomRouteMiddleware{
-			goBetterAuth.AuthMiddleware(),
+			goBetterAuth.RedirectAuthMiddleware("https://go-better-auth.vercel.app", http.StatusSeeOther),
 		},
 		Handler: func(config *gobetterauthmodels.Config) http.Handler {
-			handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(map[string]any{
-					"message": fmt.Sprintf("%s: Hello from custom route!", config.AppName),
+					"message": fmt.Sprintf("%s: Hello from %s", config.AppName, req.URL.Path),
 				})
 			})
-			return handler
 		},
 	})
 
@@ -415,7 +414,7 @@ func main() {
 			goBetterAuth.CSRFMiddleware(),
 		},
 		Handler: func(config *gobetterauthmodels.Config) http.Handler {
-			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var body map[string]any
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 					w.Header().Set("Content-Type", "application/json")
@@ -427,13 +426,12 @@ func main() {
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(map[string]any{
-					"message": fmt.Sprintf("%s: data received", config.AppName),
+					"message": fmt.Sprintf("%s: data received on %s", config.AppName, r.URL.Path),
 					"data":    body,
 				})
 			})
-			return handler
 		},
 	})
 

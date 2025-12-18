@@ -3,7 +3,7 @@ module github.com/GoBetterAuth/go-better-auth-playground
 go 1.25.4
 
 require (
-	github.com/GoBetterAuth/go-better-auth v1.3.6
+	github.com/GoBetterAuth/go-better-auth v1.3.8
 	github.com/IBM/sarama v1.46.3
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2

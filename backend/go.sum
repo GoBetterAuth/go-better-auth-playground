@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/GoBetterAuth/go-better-auth v1.3.6 h1:+ZZiC/13+owE52g0F09Td6B25Wg9nLembw47b0hhfs4=
-github.com/GoBetterAuth/go-better-auth v1.3.6/go.mod h1:PZFiWBF1jEguIXCCu392Zl5zSJeHYzqkrsNE5wsMqZM=
+github.com/GoBetterAuth/go-better-auth v1.3.8 h1:tWvug+anKEitSoPWSJng6GjEgFN810eemJ6vMQhhQd4=
+github.com/GoBetterAuth/go-better-auth v1.3.8/go.mod h1:PZFiWBF1jEguIXCCu392Zl5zSJeHYzqkrsNE5wsMqZM=
 github.com/IBM/sarama v1.46.3 h1:njRsX6jNlnR+ClJ8XmkO+CM4unbrNr/2vB5KK6UA+IE=
 github.com/IBM/sarama v1.46.3/go.mod h1:GTUYiF9DMOZVe3FwyGT+dtSPceGFIgA+sPc5u6CBwko=
 github.com/ThreeDotsLabs/watermill v1.5.1 h1:t5xMivyf9tpmU3iozPqyrCZXHvoV1XQDfihas4sV0fY=
