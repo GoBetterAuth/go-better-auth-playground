@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { SignOutButton } from '@/components/SignOutButton';
 import {
@@ -9,7 +10,10 @@ import { goBetterAuthServer } from '@/lib/gobetterauth-server';
 
 export default async function DashboardPage() {
   const data = await goBetterAuthServer.getSession();
-  const user = data.user;
+  const user = data?.user;
+  if (!user) {
+    redirect("/auth/sign-in");
+  }
 
   return (
     <div className="h-full w-full p-4 grid place-items-center">
@@ -34,19 +38,19 @@ export default async function DashboardPage() {
           <div>
             <Label className="text-sm font-medium">Email Verified</Label>
             <p className="text-sm text-muted-foreground">
-              {user.email_verified ? "Yes" : "No"}
+              {user.emailVerified ? "Yes" : "No"}
             </p>
           </div>
           <div>
             <Label className="text-sm font-medium">Created At</Label>
             <p className="text-sm text-muted-foreground">
-              {new Date(user.created_at).toLocaleString()}
+              {new Date(user.createdAt).toLocaleString()}
             </p>
           </div>
           <div>
             <Label className="text-sm font-medium">Updated At</Label>
             <p className="text-sm text-muted-foreground">
-              {new Date(user.updated_at).toLocaleString()}
+              {new Date(user.updatedAt).toLocaleString()}
             </p>
           </div>
           <div>

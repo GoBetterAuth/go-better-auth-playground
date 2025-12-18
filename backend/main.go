@@ -168,6 +168,23 @@ func main() {
 			gobetterauthmodels.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthmodels.EndpointHookContext) error {
 					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Request.Method, ctx.Request.URL.Path))
+
+					// Uncomment this to test out custom validation before a handler is executed
+					// if ctx.Path == "/api/auth/sign-up/email" {
+					// 	email, ok := ctx.Body["email"].(string)
+					// 	if !ok {
+					// 		return fmt.Errorf("email is required")
+					// 	}
+
+					// 	if email[len(email)-10:] != "@gmail.com" {
+					// 		ctx.ResponseStatus = http.StatusBadRequest
+					// 		ctx.ResponseHeaders["Content-Type"] = []string{"text/html"}
+					// 		ctx.ResponseBody = []byte("<h1>Only @gmail.com emails are allowed</h1>")
+					// 		// We return a nil error here so that the endpoint hook by default doesn't override our custom response and return json.
+					// 		return nil
+					// 	}
+					// }
+
 					return nil
 				},
 				// Uncomment this to test out modifying responses
@@ -228,9 +245,47 @@ func main() {
 		gobetterauthconfig.WithPlugins(
 			gobetterauthmodels.PluginsConfig{
 				Plugins: []gobetterauthmodels.Plugin{
-					loggerplugin.NewLoggerPlugin(gobetterauthmodels.PluginConfig{
-						Enabled: true,
+					// Logger Plugin
+					loggerplugin.NewLoggerPlugin(loggerplugin.LoggerPluginConfigOptions{
+						MaxLogCount: 5,
 					}),
+					// Inline Plugin Example
+					gobetterauthconfig.NewPlugin(
+						gobetterauthconfig.WithPluginMetadata(
+							gobetterauthmodels.PluginMetadata{
+								Name:        "Inline Plugin",
+								Version:     "0.0.1",
+								Description: "This is an example of a simple inline plugin.",
+							},
+						),
+						gobetterauthconfig.WithPluginConfig(
+							gobetterauthmodels.PluginConfig{
+								Enabled: true,
+							},
+						),
+						gobetterauthconfig.WithPluginInit(func(ctx *gobetterauthmodels.PluginContext) error {
+							slog.Info("Inline Plugin initialized!")
+							slog.Info("App name: " + ctx.Config.AppName)
+							return nil
+						}),
+						gobetterauthconfig.WithPluginRoutes(
+							[]gobetterauthmodels.PluginRoute{
+								{
+									Method: "GET",
+									Path:   "/ping",
+									Handler: func() http.Handler {
+										return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+											w.Header().Set("Content-Type", "application/json")
+											w.WriteHeader(200)
+											json.NewEncoder(w).Encode(map[string]any{
+												"message": "pong",
+											})
+										})
+									},
+								},
+							},
+						),
+					),
 				},
 			},
 		),

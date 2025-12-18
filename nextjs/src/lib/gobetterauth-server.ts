@@ -1,6 +1,9 @@
 import { cookies } from 'next/headers';
 
-import { OAuth2ProviderType } from '@/models';
+import { toCamelCaseKeys } from 'es-toolkit';
+import { z } from 'zod';
+
+import { OAuth2ProviderType, sessionSchema, userSchema } from '@/models';
 import { ENV_CONFIG } from './env-config';
 
 async function applySetCookie(response: Response): Promise<void> {
@@ -202,12 +205,26 @@ export const goBetterAuthServer = {
   },
   getSession: async () => {
     try {
-      return await wrappedFetch("/me", {
+      const data = await wrappedFetch("/me", {
         method: "GET",
         includeCookies: true,
         includeCSRF: true,
       });
-    } catch {
+
+      const validationResult = z
+        .object({
+          user: userSchema,
+          session: sessionSchema,
+        })
+        .parse(toCamelCaseKeys(data));
+
+      if (!validationResult) {
+        return null;
+      }
+
+      return validationResult;
+    } catch (error: any) {
+      console.error(error);
       return null;
     }
   },

@@ -1,4 +1,7 @@
-import { OAuth2ProviderType } from '@/models';
+import { toCamelCaseKeys } from 'es-toolkit';
+import { z } from 'zod';
+
+import { OAuth2ProviderType, sessionSchema, userSchema } from '@/models';
 import { ENV_CONFIG } from './env-config';
 
 function getCSRFCookieValue(): string {
@@ -103,8 +106,27 @@ export const goBetterAuthClient = {
       method: "POST",
       includeCSRF: true,
     }),
-  getSession: async () =>
-    wrappedFetch("/me", {
-      method: "GET",
-    }),
+  getSession: async () => {
+    try {
+      const data = await wrappedFetch("/me", {
+        method: "GET",
+      });
+
+      const validationResult = z
+        .object({
+          user: userSchema,
+          session: sessionSchema,
+        })
+        .parse(toCamelCaseKeys(data));
+
+      if (!validationResult) {
+        return null;
+      }
+
+      return validationResult;
+    } catch (error: any) {
+      console.error(error);
+      return null;
+    }
+  },
 };

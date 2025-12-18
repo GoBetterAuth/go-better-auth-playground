@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
     const isAuthenticated = !!data?.user;
 
     if (isAuthenticated) {
-      if (!data.user.email_verified) {
+      if (!data.user.emailVerified) {
         if (!request.nextUrl.pathname.startsWith("/auth/email-verification")) {
           const url = request.nextUrl.clone();
           url.pathname = "/auth/email-verification";

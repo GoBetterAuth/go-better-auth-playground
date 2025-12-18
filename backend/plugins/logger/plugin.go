@@ -11,48 +11,66 @@ import (
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/models"
 )
 
-// LoggerPlugin is a sample plugin used for demonstration purposes that carries out logging upon user events and stores log entries in the database.
+type LogEntryDatabaseHooks struct {
+	BeforeCreate func(entry *LogEntry) error
+	AfterCreate  func(entry LogEntry) error
+}
+
+type LogEntryEventHooks struct {
+	OnLogCreated func(entry LogEntry) error
+}
+
+type LoggerPluginConfigOptions struct {
+	DatabaseHooks *LogEntryDatabaseHooks
+	EventHooks    *LogEntryEventHooks
+	MaxLogCount   int
+}
+
 type LoggerPlugin struct {
-	config  gobetterauthmodels.PluginConfig
-	ctx     *gobetterauthmodels.PluginContext
+	// Embed the base plugin struct to inherit common functionality
+	gobetterauthmodels.BasePlugin
+	// service to handle business logic
 	service *LoggerService
 	// local state to keep track of the number of logs executed during runtime (just a random example, not stored in DB)
 	logCount int
 	// keep track of event subscriptions to allow for unsubscription on plugin close
-	eventSubscriptions map[string]gobetterauthmodels.SubscriptionID
+	eventSubscriptions    map[string]gobetterauthmodels.SubscriptionID
+	logEntryDatabaseHooks *LogEntryDatabaseHooks
+	logEntryEventHooks    *LogEntryEventHooks
 }
 
-func NewLoggerPlugin(config gobetterauthmodels.PluginConfig) *LoggerPlugin {
-	return &LoggerPlugin{
-		config:             config,
-		logCount:           0,
+func NewLoggerPlugin(options LoggerPluginConfigOptions) gobetterauthmodels.Plugin {
+	plugin := &LoggerPlugin{
 		eventSubscriptions: make(map[string]gobetterauthmodels.SubscriptionID),
 	}
-}
+	plugin.SetConfig(gobetterauthmodels.PluginConfig{
+		Enabled: true,
+		Options: options,
+	})
 
-func (plugin *LoggerPlugin) Metadata() gobetterauthmodels.PluginMetadata {
-	return gobetterauthmodels.PluginMetadata{
-		Name:        "Logger Plugin",
-		Version:     "0.0.1",
-		Description: "Logger plugin example",
+	dbHooks := options.DatabaseHooks
+	if dbHooks == nil {
+		dbHooks = &LogEntryDatabaseHooks{}
 	}
-}
+	plugin.SetDatabaseHooks(dbHooks)
 
-func (plugin *LoggerPlugin) Config() gobetterauthmodels.PluginConfig {
-	return plugin.config
-}
+	eventHooks := options.EventHooks
+	if eventHooks == nil {
+		eventHooks = &LogEntryEventHooks{}
+	}
+	plugin.SetEventHooks(eventHooks)
 
-func (plugin *LoggerPlugin) Ctx() *gobetterauthmodels.PluginContext {
-	return plugin.ctx
+	return plugin
 }
 
 func (plugin *LoggerPlugin) Init(ctx *gobetterauthmodels.PluginContext) error {
 	// Store the context for later use
-	plugin.ctx = ctx
+	plugin.SetCtx(ctx)
 
 	// Initialise your plugin's service (handles business logic for your plugin)
-	plugin.service = NewLoggerService(ctx.Config.DB)
+	plugin.service = NewLoggerService(ctx.Config.DB, plugin.logEntryDatabaseHooks)
 
+	var eventUserSignedUpSubId gobetterauthmodels.SubscriptionID
 	if id, err := ctx.EventBus.Subscribe(
 		gobetterauthmodels.EventUserSignedUp,
 		func(ctx context.Context, event gobetterauthmodels.Event) error {
@@ -68,14 +86,27 @@ func (plugin *LoggerPlugin) Init(ctx *gobetterauthmodels.PluginContext) error {
 					return fmt.Errorf("user ID not found in event payload")
 				}
 
-				if user, err := plugin.ctx.Api.Users.GetUserByID(userId.(string)); err != nil {
+				if user, err := plugin.Ctx().Api.Users.GetUserByID(userId.(string)); err != nil {
 					slog.Error("failed to get user by ID", "error", err)
 					return err
 				} else {
 					details := fmt.Sprintf("[LoggerPlugin] - User signed up: user_id=%s, email=%s", user.ID, user.Email)
 					slog.Info(details)
+
 					plugin.logCount++
-					return plugin.service.Log(gobetterauthmodels.EventUserSignedUp, details)
+
+					logEntry, err := plugin.service.CreateLogEntry(gobetterauthmodels.EventUserSignedUp, details)
+					if err != nil {
+						return err
+					}
+
+					if plugin.logEntryEventHooks != nil && plugin.logEntryEventHooks.OnLogCreated != nil {
+						if err := plugin.logEntryEventHooks.OnLogCreated(*logEntry); err != nil {
+							return err
+						}
+					}
+
+					plugin.checkAndHandleMaxLogsReached(gobetterauthmodels.EventUserSignedUp, eventUserSignedUpSubId)
 				}
 			}
 
@@ -83,10 +114,12 @@ func (plugin *LoggerPlugin) Init(ctx *gobetterauthmodels.PluginContext) error {
 		}); err != nil {
 		return err
 	} else {
-		slog.Info("Subscribed to EventUserSignedUp", "subscription_id", id)
-		plugin.eventSubscriptions[gobetterauthmodels.EventUserSignedUp] = id
+		eventUserSignedUpSubId = id
+		slog.Info("Subscribed to EventUserSignedUp", "subscription_id", eventUserSignedUpSubId)
+		plugin.eventSubscriptions[gobetterauthmodels.EventUserSignedUp] = eventUserSignedUpSubId
 	}
 
+	var eventUserLoggedInSubId gobetterauthmodels.SubscriptionID
 	if id, err := ctx.EventBus.Subscribe(
 		gobetterauthmodels.EventUserLoggedIn,
 		func(ctx context.Context, event gobetterauthmodels.Event) error {
@@ -102,14 +135,27 @@ func (plugin *LoggerPlugin) Init(ctx *gobetterauthmodels.PluginContext) error {
 					return fmt.Errorf("user ID not found in event payload")
 				}
 
-				if user, err := plugin.ctx.Api.Users.GetUserByID(userId.(string)); err != nil {
+				if user, err := plugin.Ctx().Api.Users.GetUserByID(userId.(string)); err != nil {
 					slog.Error("failed to get user by ID", "error", err)
 					return err
 				} else {
 					details := fmt.Sprintf("[LoggerPlugin] - User logged in: user_id=%s, email=%s", user.ID, user.Email)
 					slog.Info(details)
+
 					plugin.logCount++
-					return plugin.service.Log(gobetterauthmodels.EventUserLoggedIn, details)
+
+					logEntry, err := plugin.service.CreateLogEntry(gobetterauthmodels.EventUserLoggedIn, details)
+					if err != nil {
+						return err
+					}
+
+					if plugin.logEntryEventHooks != nil && plugin.logEntryEventHooks.OnLogCreated != nil {
+						if err := plugin.logEntryEventHooks.OnLogCreated(*logEntry); err != nil {
+							return err
+						}
+					}
+
+					plugin.checkAndHandleMaxLogsReached(gobetterauthmodels.EventUserLoggedIn, eventUserLoggedInSubId)
 				}
 			}
 
@@ -117,8 +163,9 @@ func (plugin *LoggerPlugin) Init(ctx *gobetterauthmodels.PluginContext) error {
 		}); err != nil {
 		return err
 	} else {
-		slog.Info("Subscribed to EventUserLoggedIn", "subscription_id", id)
-		plugin.eventSubscriptions[gobetterauthmodels.EventUserLoggedIn] = id
+		eventUserLoggedInSubId = id
+		slog.Info("Subscribed to EventUserLoggedIn", "subscription_id", eventUserLoggedInSubId)
+		plugin.eventSubscriptions[gobetterauthmodels.EventUserLoggedIn] = eventUserLoggedInSubId
 	}
 
 	return nil
@@ -134,16 +181,15 @@ func (plugin *LoggerPlugin) Routes() []gobetterauthmodels.PluginRoute {
 			Method: "GET",
 			Path:   "/logger/count",
 			Middleware: []gobetterauthmodels.PluginRouteMiddleware{
-				plugin.ctx.Middleware.Auth(),
+				plugin.Ctx().Middleware.Auth(),
 			},
 			Handler: func() http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					jsonData := map[string]any{
-						"logCount": plugin.logCount,
-					}
-					response, _ := json.Marshal(jsonData)
 					w.Header().Set("Content-Type", "application/json")
-					w.Write(response)
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(map[string]any{
+						"logCount": plugin.logCount,
+					})
 				})
 			},
 		},
@@ -158,19 +204,30 @@ func (plugin *LoggerPlugin) RateLimit() *gobetterauthmodels.PluginRateLimit {
 	}
 }
 
-func (plugin *LoggerPlugin) DatabaseHooks() *gobetterauthmodels.PluginDatabaseHooks {
-	return nil
+func (plugin *LoggerPlugin) DatabaseHooks() any {
+	return plugin.logEntryDatabaseHooks
 }
 
-func (plugin *LoggerPlugin) EventHooks() *gobetterauthmodels.PluginEventHooks {
-	return nil
+func (plugin *LoggerPlugin) EventHooks() any {
+	return plugin.logEntryEventHooks
 }
 
 func (plugin *LoggerPlugin) Close() error {
 	for eventType, subId := range plugin.eventSubscriptions {
-		plugin.ctx.EventBus.Unsubscribe(eventType, subId)
+		plugin.Ctx().EventBus.Unsubscribe(eventType, subId)
 	}
 	slog.Info("LoggerPlugin closed and unsubscribed from events", "count", len(plugin.eventSubscriptions))
 
 	return nil
+}
+
+// checkAndHandleMaxLogsReached checks if the maximum log count has been reached.
+// If it has, it unsubscribes from the specified event type.
+func (plugin *LoggerPlugin) checkAndHandleMaxLogsReached(eventType string, id gobetterauthmodels.SubscriptionID) {
+	pluginOptions := plugin.Config().Options.(LoggerPluginConfigOptions)
+
+	if plugin.logCount >= pluginOptions.MaxLogCount {
+		plugin.Ctx().EventBus.Unsubscribe(eventType, id)
+		slog.Info("LoggerPlugin unsubscribed from event due to max log count reached", "eventType", eventType, "maxLogCount", pluginOptions.MaxLogCount)
+	}
 }
