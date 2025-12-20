@@ -1,0 +1,53 @@
+{
+  "name": "go-better-auth-playground",
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+  "workspaceFolder": "/workspaces/go-better-auth-playground",
+  "forwardPorts": [3000, 8080],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "workbench.iconTheme": "vscode-icons",
+        "editor.tabSize": 2,
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
+        "editor.defaultFormatter": "prettier.prettier-vscode",
+        "javascript.updateImportsOnFileMove.enabled": "always",
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "telemetry.telemetryLevel": "off",
+        "editor.bracketPairColorization.enabled": true,
+        "editor.guides.bracketPairs": "active"
+      },
+      "extensions": [
+        "redhat.vscode-yaml",
+        "dbaeumer.vscode-eslint",
+        "vscode-icons-team.vscode-icons",
+        "eamodio.gitlens",
+        "prettier.prettier-vscode",
+        "aaron-bond.better-comments",
+        "codeandstuff.package-json-upgrade",
+        "dsznajder.es7-react-js-snippets",
+        "andys8.jest-snippets",
+        "mike-co.import-sorter",
+        "oderwat.indent-rainbow",
+        "evondev.indent-rainbow-palettes",
+        "formulahendry.auto-rename-tag",
+        "IronGeek.vscode-env",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-containers",
+        "yoavbls.pretty-ts-errors",
+        "github.vscode-github-actions",
+        "golang.go",
+        "Gruntfuggly.todo-tree",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  }
+}

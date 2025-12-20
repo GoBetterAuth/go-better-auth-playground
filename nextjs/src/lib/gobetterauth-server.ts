@@ -77,10 +77,15 @@ async function wrappedFetch(
   } = { method: "GET", applySetCookie: false },
 ): Promise<unknown> {
   const url = `${ENV_CONFIG.gobetterauth.url}${endpoint}`;
+  console.log(url);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+
+  // Add Origin header as it's not sent automatically server-side in Next.js
+  const origin = new URL(ENV_CONFIG.baseUrl).origin;
+  headers.Origin = origin;
 
   if (options.includeCookies) {
     const cookieStore = await cookies();
@@ -106,24 +111,38 @@ async function wrappedFetch(
       ? JSON.stringify(bodyData)
       : undefined;
 
-  const response = await fetch(url, {
-    method: options.method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  if (!response.ok) {
+  try {
+    const response = await fetch(url, {
+      method: options.method,
+      headers,
+      body,
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || response.statusText);
+    }
+
+    if (!!options.applySetCookie) {
+      await applySetCookie(response);
+    }
+
     const data = await response.json();
-    throw new Error(data.message || response.statusText);
+    return data;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out");
+    }
+    throw error;
   }
-
-  if (!!options.applySetCookie) {
-    await applySetCookie(response);
-  }
-
-  const data = await response.json();
-  return data;
 }
 
 // Simulating GoBetterAuth Node.js Server-Side SDK (coming soon)

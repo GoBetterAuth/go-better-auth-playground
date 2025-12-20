@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -49,7 +50,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 	slog.SetDefault(logger)
 
 	// -------------------------------------
@@ -148,24 +151,22 @@ func main() {
 			},
 		),
 		// Uncomment to test out rate limiting
-		// gobetterauthconfig.WithRateLimit(
-		// 	gobetterauthmodels.RateLimitConfig{
-		// 		Enabled: true,
-		// 		Window:  10 * time.Second,
-		// 		Max:     5,
-		// 		CustomRules: map[string]gobetterauthmodels.RateLimitCustomRuleFunc{
-		// 			"/api/protected": func(req *http.Request) gobetterauthmodels.RateLimitCustomRule {
-		// 				return gobetterauthmodels.RateLimitCustomRule{
-		// 					Disabled: true,
-		// 				}
-		// 			},
-		// 		},
-		// 	},
-		// ),
+		gobetterauthconfig.WithRateLimit(
+			gobetterauthmodels.RateLimitConfig{
+				Enabled: true,
+				Window:  1 * time.Minute,
+				Max:     10,
+				CustomRules: map[string]gobetterauthmodels.RateLimitCustomRule{
+					"/api/protected": {
+						Disabled: true,
+					},
+				},
+			},
+		),
 		gobetterauthconfig.WithEndpointHooks(
 			gobetterauthmodels.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthmodels.EndpointHookContext) error {
-					logger.Debug(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Method, ctx.Path))
+					logger.Info(fmt.Sprintf("in 'before' endpoint hook %s %s", ctx.Method, ctx.Path))
 
 					// Uncomment this to test out custom validation before a handler is executed
 					// if ctx.Path == "/api/auth/sign-up/email" {
