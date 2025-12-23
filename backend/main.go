@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -78,28 +77,33 @@ func main() {
 			RequireEmailVerification: true,
 			AutoSignIn:               true,
 			SendResetPasswordEmail: func(user gobetterauthmodels.User, url string, token string) error {
-				if err := sendEmail(
-					user.Email,
-					"Reset your password",
-					fmt.Sprintf("<p>Please reset your password by clicking <a href=\"%s\">here</a>.</p>", url),
-					fmt.Sprintf("Please reset your password by visiting the following link: %s", url),
-				); err != nil {
-					return err
-				}
+				go func() {
+					if err := sendEmail(
+						user.Email,
+						"Reset your password",
+						fmt.Sprintf("<p>Please reset your password by clicking <a href=\"%s\">here</a>.</p>", url),
+						fmt.Sprintf("Please reset your password by visiting the following link: %s", url),
+					); err != nil {
+						fmt.Println(err.Error())
+					}
+				}()
+
 				return nil
 			},
 		}),
 		gobetterauthconfig.WithEmailVerification(gobetterauthmodels.EmailVerificationConfig{
 			SendOnSignUp: true,
 			SendVerificationEmail: func(user gobetterauthmodels.User, url string, token string) error {
-				if err := sendEmail(
-					user.Email,
-					"Verify your email",
-					fmt.Sprintf("<p>Please verify your email by clicking <a href=\"%s\">here</a>.</p>", url),
-					fmt.Sprintf("Please verify your email by visiting the following link: %s", url),
-				); err != nil {
-					return err
-				}
+				go func() {
+					if err := sendEmail(
+						user.Email,
+						"Verify your email",
+						fmt.Sprintf("<p>Please verify your email by clicking <a href=\"%s\">here</a>.</p>", url),
+						fmt.Sprintf("Please verify your email by visiting the following link: %s", url),
+					); err != nil {
+						fmt.Println(err.Error())
+					}
+				}()
 				return nil
 			},
 		}),
@@ -107,14 +111,17 @@ func main() {
 			ChangeEmail: gobetterauthmodels.ChangeEmailConfig{
 				Enabled: true,
 				SendEmailChangeVerificationEmail: func(user gobetterauthmodels.User, newEmail string, url string, token string) error {
-					if err := sendEmail(
-						user.Email,
-						"You requested to change your email",
-						fmt.Sprintf("<p>Please click on the following link to change your email from %s to %s <a href=\"%s\">here</a>.</p>", user.Email, newEmail, url),
-						fmt.Sprintf("Please click on the following link to change your email from %s to %s: %s", user.Email, newEmail, url),
-					); err != nil {
-						return err
-					}
+					go func() {
+						if err := sendEmail(
+							user.Email,
+							"You requested to change your email",
+							fmt.Sprintf("<p>Please click on the following link to change your email from %s to %s <a href=\"%s\">here</a>.</p>", user.Email, newEmail, url),
+							fmt.Sprintf("Please click on the following link to change your email from %s to %s: %s", user.Email, newEmail, url),
+						); err != nil {
+							fmt.Println(err.Error())
+						}
+					}()
+
 					return nil
 				},
 			},
@@ -126,21 +133,18 @@ func main() {
 		),
 		gobetterauthconfig.WithSocialProviders(
 			gobetterauthmodels.SocialProvidersConfig{
-				Default: gobetterauthmodels.DefaultOAuth2ProvidersConfig{
-					Discord: &gobetterauthmodels.OAuth2Config{
-						ClientID:     utils.GetEnv("DISCORD_CLIENT_ID", ""),
-						ClientSecret: utils.GetEnv("DISCORD_CLIENT_SECRET", ""),
-						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+				Providers: map[string]gobetterauthmodels.OAuth2ProviderConfig{
+					"discord": {
+						Enabled:     true,
+						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
 					},
-					GitHub: &gobetterauthmodels.OAuth2Config{
-						ClientID:     utils.GetEnv("GITHUB_CLIENT_ID", ""),
-						ClientSecret: utils.GetEnv("GITHUB_CLIENT_SECRET", ""),
-						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+					"github": {
+						Enabled:     true,
+						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
 					},
-					Google: &gobetterauthmodels.OAuth2Config{
-						ClientID:     utils.GetEnv("GOOGLE_CLIENT_ID", ""),
-						ClientSecret: utils.GetEnv("GOOGLE_CLIENT_SECRET", ""),
-						RedirectURL:  fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
+					"google": {
+						Enabled:     true,
+						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
 					},
 				},
 			},
@@ -151,18 +155,18 @@ func main() {
 			},
 		),
 		// Uncomment to test out rate limiting
-		gobetterauthconfig.WithRateLimit(
-			gobetterauthmodels.RateLimitConfig{
-				Enabled: true,
-				Window:  1 * time.Minute,
-				Max:     10,
-				CustomRules: map[string]gobetterauthmodels.RateLimitCustomRule{
-					"/api/protected": {
-						Disabled: true,
-					},
-				},
-			},
-		),
+		// gobetterauthconfig.WithRateLimit(
+		// 	gobetterauthmodels.RateLimitConfig{
+		// 		Enabled: true,
+		// 		Window:  30 * time.Second,
+		// 		Max:     5,
+		// 		CustomRules: map[string]gobetterauthmodels.RateLimitCustomRule{
+		// 			"/api/protected": {
+		// 				Disabled: true,
+		// 			},
+		// 		},
+		// 	},
+		// ),
 		gobetterauthconfig.WithEndpointHooks(
 			gobetterauthmodels.EndpointHooksConfig{
 				Before: func(ctx *gobetterauthmodels.EndpointHookContext) error {
@@ -204,10 +208,8 @@ func main() {
 
 				// 	return nil
 				// },
-				After: func(ctx *gobetterauthmodels.EndpointHookContext) error {
+				After: func(ctx *gobetterauthmodels.EndpointHookContext) {
 					logger.Debug(fmt.Sprintf("in 'after' endpoint hook %s %s", ctx.Method, ctx.Path))
-
-					return nil
 				},
 			},
 		),
@@ -220,23 +222,32 @@ func main() {
 			},
 		}),
 		gobetterauthconfig.WithEventHooks(gobetterauthmodels.EventHooksConfig{
-			OnUserSignedUp: func(user gobetterauthmodels.User) error {
+			OnUserSignedUp: func(user gobetterauthmodels.User) {
 				logger.Info(fmt.Sprintf("User signed up with email: %s", user.Email))
-				return nil
 			},
-			OnEmailVerified: func(user gobetterauthmodels.User) error {
+			OnEmailVerified: func(user gobetterauthmodels.User) {
 				logger.Info(fmt.Sprintf("Email verified for user with email: %s", user.Email))
-				return nil
 			},
-			OnEmailChanged: func(user gobetterauthmodels.User) error {
+			OnEmailChanged: func(user gobetterauthmodels.User) {
 				logger.Info(fmt.Sprintf("User with email %s changed their email", user.Email))
-				return nil
 			},
-			OnPasswordChanged: func(user gobetterauthmodels.User) error {
+			OnPasswordChanged: func(user gobetterauthmodels.User) {
 				logger.Info(fmt.Sprintf("User with email %s changed their password", user.Email))
-				return nil
 			},
 		}),
+		// You can uncomment the following to test out webhooks.
+		// Would recommend using event hooks instead of webhooks for these types of hooks
+		// as it is more efficient since you can run the logic directly in Go code instead of sending a HTTP request.
+		// gobetterauthconfig.WithWebhooks(
+		// 	gobetterauthmodels.WebhooksConfig{
+		// 		OnUserSignedUp: &gobetterauthmodels.WebhookConfig{
+		// 			URL: "<webhook url>",
+		// 			Headers: map[string]string{
+		// 				"X-API-KEY": "your-api-key",
+		// 			},
+		// 		},
+		// 	},
+		// ),
 		gobetterauthconfig.WithEventBus(
 			gobetterauthmodels.EventBusConfig{
 				Enabled: true,
@@ -271,15 +282,14 @@ func main() {
 							},
 						),
 						gobetterauthconfig.WithPluginInit(func(ctx *gobetterauthmodels.PluginContext) error {
-							slog.Info("Inline Plugin initialized!")
-							slog.Info("App name: " + ctx.Config.AppName)
+							slog.Info("Inline Plugin initialized for App: " + ctx.Config.AppName)
 							return nil
 						}),
 						gobetterauthconfig.WithPluginRoutes(
 							[]gobetterauthmodels.PluginRoute{
 								{
 									Method: "GET",
-									Path:   "/ping",
+									Path:   "/inline/ping",
 									Handler: func() http.Handler {
 										return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 											w.Header().Set("Content-Type", "application/json")
@@ -306,7 +316,6 @@ func main() {
 	// You can uncomment the following 2 lines to drop all migrations (i.e., reset the database).
 	// goBetterAuth.DropMigrations()
 	// return
-	goBetterAuth.RunMigrations()
 
 	if id, err := goBetterAuth.EventBus.Subscribe(
 		gobetterauthmodels.EventUserSignedUp,
@@ -365,9 +374,6 @@ func main() {
 	// -------------------------------------
 
 	echoInstance := echo.New()
-	if err != nil {
-		echoInstance.Logger.Fatal(err)
-	}
 
 	api := echoInstance.Group("/api")
 

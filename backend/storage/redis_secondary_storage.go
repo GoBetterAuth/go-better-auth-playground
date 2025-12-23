@@ -64,3 +64,7 @@ func (s *RedisSecondaryStorage) Incr(ctx context.Context, key string, ttl *time.
 
 	return int(val), nil
 }
+
+func (s *RedisSecondaryStorage) Close() error {
+	return s.client.Close()
+}

@@ -1,10 +1,10 @@
-import { cookies } from 'next/headers';
+import { cookies } from "next/headers";
 
-import { toCamelCaseKeys } from 'es-toolkit';
-import { z } from 'zod';
+import { toCamelCaseKeys } from "es-toolkit";
+import { z } from "zod";
 
-import { OAuth2ProviderType, sessionSchema, userSchema } from '@/models';
-import { ENV_CONFIG } from './env-config';
+import { OAuth2ProviderType, sessionSchema, userSchema } from "@/models";
+import { ENV_CONFIG } from "./env-config";
 
 async function applySetCookie(response: Response): Promise<void> {
   const cookieStore = await cookies();
@@ -77,7 +77,6 @@ async function wrappedFetch(
   } = { method: "GET", applySetCookie: false },
 ): Promise<unknown> {
   const url = `${ENV_CONFIG.gobetterauth.url}${endpoint}`;
-  console.log(url);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -154,7 +153,7 @@ export const goBetterAuthServer = {
       password: string,
       callbackUrl?: string,
     ) => {
-      return await wrappedFetch("/sign-up/email", {
+      return await wrappedFetch("/sign-up", {
         method: "POST",
         body: { name, email, password },
         callbackUrl,
@@ -164,7 +163,7 @@ export const goBetterAuthServer = {
   },
   signIn: {
     email: async (email: string, password: string, callbackUrl?: string) => {
-      return await wrappedFetch("/sign-in/email", {
+      return await wrappedFetch("/sign-in", {
         method: "POST",
         body: { email, password },
         callbackUrl,

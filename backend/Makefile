@@ -3,49 +3,43 @@ BINARY_NAME=go-better-auth-playground
 BUILD_DIR=build
 SRC_DIR=.
 
+.PHONY: all build run clean test deps fmt lint help
+
 # Default target
-.PHONY: all
 all: build
 
 # Build the application
-.PHONY: build
-build:
-	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) $(SRC_DIR)
+build: ## Build the package (library)
+	@echo "Building $(BINARY_NAME)..."
+	@go build ./...
+	@echo "Build complete!"
 
 # Run the application
-.PHONY: run
 run:
 	go run $(SRC_DIR)
 
 # Clean build artifacts
-.PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
 
 # Run tests
-.PHONY: test
 test:
 	go test ./...
 
 # Install dependencies
-.PHONY: deps
 deps:
 	go mod tidy
 	go mod download
 
 # Format code
-.PHONY: fmt
 fmt:
 	go fmt ./...
 
 # Lint code
-.PHONY: lint
 lint:
 	golangci-lint run
 
 # Help
-.PHONY: help
 help:
 	@echo "Available targets:"
 	@echo "  build    - Build the application"
