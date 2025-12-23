@@ -1,6 +1,8 @@
 package events
 
 import (
+	"os"
+
 	"github.com/IBM/sarama"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
@@ -12,7 +14,7 @@ import (
 func NewKafkaPublisher() message.Publisher {
 	publisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
-			Brokers:   []string{"localhost:19092"},
+			Brokers:   []string{os.Getenv("KAFKA_BROKERS")},
 			Marshaler: kafka.DefaultMarshaler{},
 		},
 		watermill.NewStdLogger(false, false),
@@ -31,7 +33,7 @@ func NewKafkaSubscriber() message.Subscriber {
 
 	subscriber, err := kafka.NewSubscriber(
 		kafka.SubscriberConfig{
-			Brokers:               []string{"localhost:19092"},
+			Brokers:               []string{os.Getenv("KAFKA_BROKERS")},
 			Unmarshaler:           kafka.DefaultMarshaler{},
 			OverwriteSaramaConfig: saramaSubscriberConfig,
 			ConsumerGroup:         "gobetterauthplayground_consumer_group",

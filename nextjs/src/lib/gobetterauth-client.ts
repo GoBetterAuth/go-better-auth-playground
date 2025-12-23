@@ -1,8 +1,8 @@
-import { toCamelCaseKeys } from 'es-toolkit';
-import { z } from 'zod';
+import { toCamelCaseKeys } from "es-toolkit";
+import { z } from "zod";
 
-import { OAuth2ProviderType, sessionSchema, userSchema } from '@/models';
-import { ENV_CONFIG } from './env-config';
+import { OAuth2ProviderType, sessionSchema, userSchema } from "@/models";
+import { ENV_CONFIG } from "./env-config";
 
 function getCSRFCookieValue(): string {
   // Simple client-side cookie parser
@@ -61,14 +61,14 @@ async function wrappedFetch(
 export const goBetterAuthClient = {
   signUp: {
     email: async (name: string, email: string, password: string) =>
-      wrappedFetch("/sign-up/email", {
+      wrappedFetch("/sign-up", {
         method: "POST",
         body: { name, email, password },
       }),
   },
   signIn: {
     email: async (email: string, password: string) =>
-      wrappedFetch("/sign-in/email", {
+      wrappedFetch("/sign-in", {
         method: "POST",
         body: { email, password },
       }),

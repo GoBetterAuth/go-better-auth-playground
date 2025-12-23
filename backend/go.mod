@@ -1,9 +1,9 @@
 module github.com/GoBetterAuth/go-better-auth-playground
 
-go 1.25.4
+go 1.25.5
 
 require (
-	github.com/GoBetterAuth/go-better-auth v1.3.8
+	github.com/GoBetterAuth/go-better-auth v1.4.0
 	github.com/IBM/sarama v1.46.3
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2
@@ -68,6 +68,7 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.6.0 // indirect

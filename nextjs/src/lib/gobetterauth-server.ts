@@ -1,10 +1,10 @@
-import { cookies } from 'next/headers';
+import { cookies } from "next/headers";
 
-import { toCamelCaseKeys } from 'es-toolkit';
-import { z } from 'zod';
+import { toCamelCaseKeys } from "es-toolkit";
+import { z } from "zod";
 
-import { OAuth2ProviderType, sessionSchema, userSchema } from '@/models';
-import { ENV_CONFIG } from './env-config';
+import { OAuth2ProviderType, sessionSchema, userSchema } from "@/models";
+import { ENV_CONFIG } from "./env-config";
 
 async function applySetCookie(response: Response): Promise<void> {
   const cookieStore = await cookies();
@@ -82,6 +82,10 @@ async function wrappedFetch(
     "Content-Type": "application/json",
   };
 
+  // Add Origin header as it's not sent automatically server-side in Next.js
+  const origin = new URL(ENV_CONFIG.baseUrl).origin;
+  headers.Origin = origin;
+
   if (options.includeCookies) {
     const cookieStore = await cookies();
     const allCookies = cookieStore
@@ -106,24 +110,38 @@ async function wrappedFetch(
       ? JSON.stringify(bodyData)
       : undefined;
 
-  const response = await fetch(url, {
-    method: options.method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  if (!response.ok) {
+  try {
+    const response = await fetch(url, {
+      method: options.method,
+      headers,
+      body,
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || response.statusText);
+    }
+
+    if (!!options.applySetCookie) {
+      await applySetCookie(response);
+    }
+
     const data = await response.json();
-    throw new Error(data.message || response.statusText);
+    return data;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out");
+    }
+    throw error;
   }
-
-  if (!!options.applySetCookie) {
-    await applySetCookie(response);
-  }
-
-  const data = await response.json();
-  return data;
 }
 
 // Simulating GoBetterAuth Node.js Server-Side SDK (coming soon)
@@ -135,7 +153,7 @@ export const goBetterAuthServer = {
       password: string,
       callbackUrl?: string,
     ) => {
-      return await wrappedFetch("/sign-up/email", {
+      return await wrappedFetch("/sign-up", {
         method: "POST",
         body: { name, email, password },
         callbackUrl,
@@ -145,7 +163,7 @@ export const goBetterAuthServer = {
   },
   signIn: {
     email: async (email: string, password: string, callbackUrl?: string) => {
-      return await wrappedFetch("/sign-in/email", {
+      return await wrappedFetch("/sign-in", {
         method: "POST",
         body: { email, password },
         callbackUrl,
