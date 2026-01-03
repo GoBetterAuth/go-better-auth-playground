@@ -15,6 +15,7 @@ import (
 
 	gobetterauth "github.com/GoBetterAuth/go-better-auth"
 	gobetterauthconfig "github.com/GoBetterAuth/go-better-auth/config"
+	gobetterauthenv "github.com/GoBetterAuth/go-better-auth/env"
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/models"
 
 	loggerplugin "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger"
@@ -62,8 +63,8 @@ func main() {
 		gobetterauthconfig.WithAppName("GoBetterAuthPlayground"),
 		gobetterauthconfig.WithBasePath("/api/auth"),
 		gobetterauthconfig.WithDatabase(gobetterauthmodels.DatabaseConfig{
-			Provider:         "postgres",
-			ConnectionString: os.Getenv("DATABASE_URL"),
+			Provider: "postgres",
+			URL:      os.Getenv(gobetterauthenv.DatabaseURL),
 		}),
 		gobetterauthconfig.WithSecondaryStorage(
 			gobetterauthmodels.SecondaryStorageConfig{
@@ -133,19 +134,17 @@ func main() {
 		),
 		gobetterauthconfig.WithSocialProviders(
 			gobetterauthmodels.SocialProvidersConfig{
-				Providers: map[string]gobetterauthmodels.OAuth2ProviderConfig{
-					"discord": {
-						Enabled:     true,
-						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
-					},
-					"github": {
-						Enabled:     true,
-						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
-					},
-					"google": {
-						Enabled:     true,
-						RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv("GO_BETTER_AUTH_BASE_URL", "")),
-					},
+				"discord": {
+					Enabled:     true,
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
+				},
+				"github": {
+					Enabled:     true,
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
+				},
+				"google": {
+					Enabled:     true,
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
 				},
 			},
 		),
@@ -399,7 +398,7 @@ func main() {
 		Method: "GET",
 		Path:   "/get-message",
 		Middleware: []gobetterauthmodels.CustomRouteMiddleware{
-			goBetterAuth.RedirectAuthMiddleware("https://go-better-auth.vercel.app", http.StatusSeeOther),
+			goBetterAuth.RedirectAuthMiddleware("https://www.google.com", http.StatusSeeOther),
 		},
 		Handler: func(config *gobetterauthmodels.Config) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

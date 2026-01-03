@@ -36,7 +36,7 @@ ENV SHELL=/bin/zsh
 # --------------------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
   && apt install -y nodejs
-RUN npm i -g pnpm@10.26.1
+RUN npm i -g pnpm@10.27.0
 # --------------------------------------
 
 # --------------------------------------
