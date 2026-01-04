@@ -64,7 +64,7 @@ func main() {
 		gobetterauthconfig.WithBasePath("/api/auth"),
 		gobetterauthconfig.WithDatabase(gobetterauthmodels.DatabaseConfig{
 			Provider: "postgres",
-			URL:      os.Getenv(gobetterauthenv.DatabaseURL),
+			URL:      os.Getenv(gobetterauthenv.EnvDatabaseURL),
 		}),
 		gobetterauthconfig.WithSecondaryStorage(
 			gobetterauthmodels.SecondaryStorageConfig{
@@ -136,15 +136,15 @@ func main() {
 			gobetterauthmodels.SocialProvidersConfig{
 				"discord": {
 					Enabled:     true,
-					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/discord/callback", utils.GetEnv(gobetterauthenv.EnvBaseURL, "")),
 				},
 				"github": {
 					Enabled:     true,
-					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/github/callback", utils.GetEnv(gobetterauthenv.EnvBaseURL, "")),
 				},
 				"google": {
 					Enabled:     true,
-					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv(gobetterauthenv.BaseURL, "")),
+					RedirectURL: fmt.Sprintf("%s/api/auth/oauth2/google/callback", utils.GetEnv(gobetterauthenv.EnvBaseURL, "")),
 				},
 			},
 		),
@@ -484,5 +484,5 @@ func main() {
 		})
 	}, echo.WrapMiddleware(goBetterAuth.CSRFMiddleware()))
 
-	echoInstance.Logger.Fatal(echoInstance.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))
+	echoInstance.Logger.Fatal(echoInstance.Start(fmt.Sprintf(":%s", os.Getenv(gobetterauthenv.EnvPort))))
 }
