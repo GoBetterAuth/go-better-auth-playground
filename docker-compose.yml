@@ -31,7 +31,7 @@ services:
       - gobetterauth_playground_network
 
   redpanda:
-    image: redpandadata/redpanda:v25.3.3
+    image: redpandadata/redpanda:v25.3.5
     command:
       - redpanda
       - start
@@ -72,9 +72,11 @@ services:
       - gobetterauth_playground_network
 
   console:
-    image: redpandadata/console:v3.3.2
+    image: redpandadata/console:v3.5.0
     ports:
       - ${REDPANDA_CONSOLE_PORT}:8080
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
     volumes:
       - ./docker/redpanda/config:/tmp/config/
     networks:
