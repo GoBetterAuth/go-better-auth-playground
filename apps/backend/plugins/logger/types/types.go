@@ -23,8 +23,8 @@ func (c *LoggerPluginConfig) Validate() error {
 type LogEntry struct {
 	bun.BaseModel `bun:"table:log_entries"`
 
-	ID        string    `json:"id" bun:",pk"`
-	EventType string    `json:"event_type"`
-	Details   string    `json:"details"`
-	CreatedAt time.Time `json:"created_at" bun:",nullzero,notnull,default:current_timestamp"`
+	ID        int64     `json:"id" bun:"column:id,pk,autoincrement"`
+	EventType string    `json:"event_type" bun:"column:event_type"`
+	Details   string    `json:"details" bun:"column:details"`
+	CreatedAt time.Time `json:"created_at" bun:"column:created_at,default:current_timestamp"`
 }

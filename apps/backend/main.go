@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 
@@ -16,24 +15,16 @@ import (
 	gobetterauthenv "github.com/GoBetterAuth/go-better-auth/v2/env"
 	gobetterauthevents "github.com/GoBetterAuth/go-better-auth/v2/events"
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/v2/models"
-
-	bearerplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/bearer"
-	configmanagerplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/config-manager"
-	"github.com/GoBetterAuth/go-better-auth/v2/plugins/config-manager/types"
 	csrfplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/csrf"
 	emailplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/email"
 	emailpasswordplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/email-password"
 	emailpasswordplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/email-password/types"
 	emailplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/email/types"
-	jwtplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/jwt"
-	jwtplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/jwt/types"
 	oauth2plugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2"
 	oauth2plugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2/types"
 	ratelimitplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/rate-limit"
 	secondarystorageplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/secondary-storage"
-
-	loggerplugin "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger"
-	loggerplugintypes "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/types"
+	sessionplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/session"
 )
 
 func main() {
@@ -82,15 +73,14 @@ func main() {
 				Method: "GET",
 				Path:   "/me",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 				},
 			},
 			{
 				Method: "POST",
 				Path:   "/sign-in",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuthOptional.String(),
-					jwtplugin.HookIDJWTRespondJSON.String(),
+					sessionplugin.HookIDSessionAuthOptional.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -98,8 +88,7 @@ func main() {
 				Method: "POST",
 				Path:   "/sign-up",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuthOptional.String(),
-					jwtplugin.HookIDJWTRespondJSON.String(),
+					sessionplugin.HookIDSessionAuthOptional.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -107,7 +96,7 @@ func main() {
 				Method: "POST",
 				Path:   "/send-email-verification",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -115,7 +104,7 @@ func main() {
 				Method: "POST",
 				Path:   "/request-email-change",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -123,7 +112,7 @@ func main() {
 				Method: "POST",
 				Path:   "/sign-out",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -131,30 +120,29 @@ func main() {
 				Method: "POST",
 				Path:   "/tokens/refresh",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
-			{
-				Method: "GET",
-				Path:   "/oauth2/callback/{provider}",
-				Plugins: []string{
-					bearerplugin.HookIDBearerAuthOptional.String(),
-					jwtplugin.HookIDJWTRespondJSON.String(),
-				},
-			},
+			// {
+			// 	Method:  "GET",
+			// 	Path:    "/oauth2/callback/{provider}",
+			// 	Plugins: []string{
+			// 		// bearerplugin.HookIDBearerAuthOptional.String(),
+			// 		// jwtplugin.HookIDJWTRespondJSON.String(),
+			// 	},
+			// },
 			{
 				Method: "GET",
 				Path:   "/api/protected",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 				},
 			},
 			{
 				Method: "POST",
 				Path:   "/api/protected",
 				Plugins: []string{
-					bearerplugin.HookIDBearerAuth.String(),
+					sessionplugin.HookIDSessionAuth.String(),
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
@@ -168,9 +156,6 @@ func main() {
 	goBetterAuth := gobetterauth.New(&gobetterauth.AuthConfig{
 		Config: config,
 		Plugins: []gobetterauthmodels.Plugin{
-			configmanagerplugin.New(types.ConfigManagerPluginConfig{
-				Enabled: false,
-			}),
 			// Secondary storage plugin MUST be registered before rate-limit plugin
 			// This allows rate-limit to optionally use Redis/database for distributed rate limiting
 			secondarystorageplugin.New(secondarystorageplugin.SecondaryStoragePluginConfig{
@@ -221,24 +206,12 @@ func main() {
 					},
 				},
 			}),
-			// sessionplugin.New(sessionplugin.SessionPluginConfig{
-			// 	Enabled: true,
-			// }),
-			jwtplugin.New(jwtplugintypes.JWTPluginConfig{
-				Enabled:   true,
-				Algorithm: jwtplugintypes.JWTAlgEdDSA,
-				ExpiresIn: 30 * time.Second,
-			}),
-			bearerplugin.New(bearerplugin.BearerPluginConfig{
+			sessionplugin.New(sessionplugin.SessionPluginConfig{
 				Enabled: true,
 			}),
 			ratelimitplugin.New(ratelimitplugin.RateLimitPluginConfig{
 				Enabled:  true,
 				Provider: ratelimitplugin.RateLimitProviderRedis,
-			}),
-			loggerplugin.New(loggerplugintypes.LoggerPluginConfig{
-				Enabled:     true,
-				MaxLogCount: 10,
 			}),
 		},
 	})
@@ -278,6 +251,9 @@ func main() {
 				"message": fmt.Sprintf("Hello, your user ID is %s", userId),
 			})
 		}),
+		Metadata: map[string]any{
+			"plugins": []string{sessionplugin.HookIDSessionAuth.String()},
+		},
 	})
 
 	goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
@@ -289,19 +265,24 @@ func main() {
 				"message": fmt.Sprintf("Hello, your user ID is %s", userId),
 			})
 		}),
+		Metadata: map[string]any{
+			"plugins": []string{sessionplugin.HookIDSessionAuth.String()},
+		},
 	})
 
 	// goBetterAuth.RegisterHook(gobetterauthmodels.Hook{
-	// 	Stage: gobetterauthmodels.HookAfter,
+	// 	Stage: gobetterauthmodels.HookBefore,
 	// 	Matcher: func(ctx *gobetterauthmodels.RequestContext) bool {
-	// 		return ctx.Method == "POST" && ctx.Path == "/api/auth/sign-up"
+	// 		return ctx.UserID != nil && *ctx.UserID != "" && slices.Contains(
+	// 			[]string{
+	// 				"/api/protected",
+	// 				"/path/to/more/routes...",
+	// 			},
+	// 			ctx.Path,
+	// 		)
 	// 	},
 	// 	Handler: func(ctx *gobetterauthmodels.RequestContext) error {
-	// 		ctx.ResponseHeaders.Set("Content-Type", "text/html")
-	// 		ctx.ResponseStatus = http.StatusOK
-	// 		ctx.ResponseBody = []byte("<html><body><h1>Sign Up Successful</h1></body></html>")
-	// 		ctx.ResponseReady = true
-	// 		ctx.Handled = true
+	// 		// Do as you wish before the request is processed by the route handler...
 	// 		return nil
 	// 	},
 	// })

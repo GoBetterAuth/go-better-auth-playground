@@ -9,7 +9,6 @@ import (
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/repositories"
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/types"
 	"github.com/GoBetterAuth/go-better-auth/v2/models"
-	"github.com/google/uuid"
 )
 
 // service implements the UseCase interface for logger operations
@@ -32,7 +31,6 @@ func NewService(repo repositories.LoggerRepository, logger models.Logger, config
 // CreateLogEntry creates a new log entry with hooks
 func (s *service) CreateLogEntry(ctx context.Context, eventType string, details string) (*types.LogEntry, error) {
 	entry := &types.LogEntry{
-		ID:        uuid.NewString(),
 		EventType: eventType,
 		Details:   details,
 		CreatedAt: time.Now().UTC(),
@@ -59,7 +57,7 @@ func (s *service) CreateLogEntry(ctx context.Context, eventType string, details 
 }
 
 // GetLogEntry retrieves a log entry by ID
-func (s *service) GetLogEntry(ctx context.Context, id string) (*types.LogEntry, error) {
+func (s *service) GetLogEntry(ctx context.Context, id int64) (*types.LogEntry, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
@@ -69,7 +67,7 @@ func (s *service) GetAllLogs(ctx context.Context) ([]types.LogEntry, error) {
 }
 
 // DeleteLogEntry deletes a log entry
-func (s *service) DeleteLogEntry(ctx context.Context, id string) error {
+func (s *service) DeleteLogEntry(ctx context.Context, id int64) error {
 	return s.repo.Delete(ctx, id)
 }
 

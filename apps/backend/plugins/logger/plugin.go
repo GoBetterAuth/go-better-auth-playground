@@ -25,7 +25,7 @@ func New(config types.LoggerPluginConfig) *LoggerPlugin {
 
 func (p *LoggerPlugin) Metadata() models.PluginMetadata {
 	return models.PluginMetadata{
-		ID:          "Logger",
+		ID:          "logger",
 		Version:     "1.0.0",
 		Description: "Logs user authentication events to the database",
 	}
@@ -70,6 +70,9 @@ func (p *LoggerPlugin) Close() error {
 
 func (p *LoggerPlugin) subscribeToEvents() {
 	_, err := p.ctx.EventBus.Subscribe(emailpasswordpluginconstants.EventUserSignedUp, func(ctx context.Context, event models.Event) error {
+		if _, err := p.loggerService.CreateLogEntry(ctx, emailpasswordpluginconstants.EventUserSignedUp, string(event.Payload)); err != nil {
+			p.logger.Error("failed to create log entry for user sign up event", "error", err)
+		}
 		return nil
 	})
 	if err != nil {

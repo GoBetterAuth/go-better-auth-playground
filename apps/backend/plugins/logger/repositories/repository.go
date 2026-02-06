@@ -3,11 +3,10 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"time"
+
+	"github.com/uptrace/bun"
 
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/types"
-	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 )
 
 // BunLoggerRepository implements Repository
@@ -22,13 +21,6 @@ func NewBunLoggerRepository(db bun.IDB) *BunLoggerRepository {
 
 // Create saves a new log entry to the database
 func (r *BunLoggerRepository) Create(ctx context.Context, entry *types.LogEntry) error {
-	if entry.ID == "" {
-		entry.ID = uuid.NewString()
-	}
-	if entry.CreatedAt.IsZero() {
-		entry.CreatedAt = time.Now().UTC()
-	}
-
 	if _, err := r.db.NewInsert().Model(entry).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to create log entry: %w", err)
 	}
@@ -36,13 +28,10 @@ func (r *BunLoggerRepository) Create(ctx context.Context, entry *types.LogEntry)
 }
 
 // GetByID retrieves a log entry by ID
-func (r *BunLoggerRepository) GetByID(ctx context.Context, id string) (*types.LogEntry, error) {
+func (r *BunLoggerRepository) GetByID(ctx context.Context, id int64) (*types.LogEntry, error) {
 	var entry types.LogEntry
 	if err := r.db.NewSelect().Model(&entry).Where("id = ?", id).Scan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get log entry: %w", err)
-	}
-	if entry.ID == "" {
-		return nil, nil
 	}
 	return &entry, nil
 }
@@ -57,7 +46,7 @@ func (r *BunLoggerRepository) GetAll(ctx context.Context) ([]types.LogEntry, err
 }
 
 // Delete removes a log entry by ID
-func (r *BunLoggerRepository) Delete(ctx context.Context, id string) error {
+func (r *BunLoggerRepository) Delete(ctx context.Context, id int64) error {
 	if _, err := r.db.NewDelete().Model(&types.LogEntry{}).Where("id = ?", id).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete log entry: %w", err)
 	}

@@ -1,0 +1,12 @@
+-- +goose Up
+
+CREATE TABLE IF NOT EXISTS log_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_type VARCHAR(32) NOT NULL,
+  details TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- +goose Down
+
+DROP TABLE IF EXISTS log_entries;
