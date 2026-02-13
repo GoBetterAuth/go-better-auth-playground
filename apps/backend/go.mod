@@ -1,6 +1,6 @@
 module github.com/GoBetterAuth/go-better-auth-playground
 
-go 1.25.6
+go 1.26.0
 
 require (
 	github.com/joho/godotenv v1.5.1

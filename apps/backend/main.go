@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -22,6 +21,7 @@ import (
 	emailplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/email/types"
 	oauth2plugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2"
 	oauth2plugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2/types"
+
 	ratelimitplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/rate-limit"
 	secondarystorageplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/secondary-storage"
 	sessionplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/session"
@@ -239,35 +239,6 @@ func main() {
 				"status": "ok",
 			})
 		}),
-	})
-
-	// Protected test endpoint
-	goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
-		Method: "GET",
-		Path:   "/api/protected",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userId, _ := gobetterauthmodels.GetUserIDFromContext(r.Context())
-			json.NewEncoder(w).Encode(map[string]any{
-				"message": fmt.Sprintf("Hello, your user ID is %s", userId),
-			})
-		}),
-		Metadata: map[string]any{
-			"plugins": []string{sessionplugin.HookIDSessionAuth.String()},
-		},
-	})
-
-	goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
-		Method: "POST",
-		Path:   "/api/protected",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userId, _ := gobetterauthmodels.GetUserIDFromContext(r.Context())
-			json.NewEncoder(w).Encode(map[string]any{
-				"message": fmt.Sprintf("Hello, your user ID is %s", userId),
-			})
-		}),
-		Metadata: map[string]any{
-			"plugins": []string{sessionplugin.HookIDSessionAuth.String()},
-		},
 	})
 
 	// goBetterAuth.RegisterHook(gobetterauthmodels.Hook{
