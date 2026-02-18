@@ -5,6 +5,7 @@ import {
   CSRFPlugin,
   JWTPlugin,
   BearerPlugin,
+  MagicLinkPlugin,
 } from "go-better-auth/plugins";
 
 import ENV_CONFIG from "~/constants/env-config";
@@ -20,5 +21,6 @@ export const goBetterAuthClient = createClient({
     }),
     new JWTPlugin(),
     new BearerPlugin(),
+    new MagicLinkPlugin(),
   ],
 });

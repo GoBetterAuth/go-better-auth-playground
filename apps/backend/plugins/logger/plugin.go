@@ -2,12 +2,12 @@ package logger
 
 import (
 	"context"
-	"embed"
 	"fmt"
 
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/repositories"
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/services"
 	"github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/types"
+	"github.com/GoBetterAuth/go-better-auth/v2/migrations"
 	"github.com/GoBetterAuth/go-better-auth/v2/models"
 	emailpasswordpluginconstants "github.com/GoBetterAuth/go-better-auth/v2/plugins/email-password/constants"
 )
@@ -50,10 +50,6 @@ func (p *LoggerPlugin) Init(ctx *models.PluginContext) error {
 	return nil
 }
 
-func (p *LoggerPlugin) Migrations(ctx context.Context, dbProvider string) (*embed.FS, error) {
-	return GetMigrations(ctx, dbProvider)
-}
-
 func (p *LoggerPlugin) Routes() []models.Route {
 	if p.ctx == nil || p.loggerService == nil {
 		return nil
@@ -65,6 +61,14 @@ func (p *LoggerPlugin) Routes() []models.Route {
 }
 
 func (p *LoggerPlugin) Close() error {
+	return nil
+}
+
+func (p *LoggerPlugin) Migrations(provider string) []migrations.Migration {
+	return loggerMigrations(provider)
+}
+
+func (p *LoggerPlugin) DependsOn() []string {
 	return nil
 }
 

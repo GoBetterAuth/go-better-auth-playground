@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SocialProviderButtons from "./SocialProviderButtons";
+import MagicLinkSignInButton from "./MagicLinkSignInButton";
 
 const formSchema = z.object({
   email: z.email("Invalid email address"),
@@ -68,6 +69,19 @@ export default function SignInForm() {
       <CardContent>
         <div className="grid gap-4">
           <SocialProviderButtons />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <MagicLinkSignInButton />
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

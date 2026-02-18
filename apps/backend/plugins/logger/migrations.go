@@ -2,29 +2,97 @@ package logger
 
 import (
 	"context"
-	"embed"
-	"fmt"
+
+	"github.com/uptrace/bun"
+
+	"github.com/GoBetterAuth/go-better-auth/v2/migrations"
 )
 
-//go:embed migrations/sqlite/*.sql
-var sqliteFS embed.FS
+func loggerMigrations(provider string) []migrations.Migration {
+	return migrations.ForProvider(provider, migrations.ProviderVariants{
+		"sqlite": func() []migrations.Migration {
+			return []migrations.Migration{loggerSQLiteInitial()}
+		},
+		"postgres": func() []migrations.Migration {
+			return []migrations.Migration{loggerPostgresInitial()}
+		},
+		"mysql": func() []migrations.Migration {
+			return []migrations.Migration{loggerMySQLInitial()}
+		},
+	})
+}
 
-//go:embed migrations/postgres/*.sql
-var postgresFS embed.FS
+func loggerSQLiteInitial() migrations.Migration {
+	return migrations.Migration{
+		Version: "20260201000000_logger_initial",
+		Up: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`CREATE TABLE IF NOT EXISTS log_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_type VARCHAR(32) NOT NULL,
+  details TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`,
+			)
+		},
+		Down: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`DROP TABLE IF EXISTS log_entries;`,
+			)
+		},
+	}
+}
 
-//go:embed migrations/mysql/*.sql
-var mysqlFS embed.FS
+func loggerPostgresInitial() migrations.Migration {
+	return migrations.Migration{
+		Version: "20260201000000_logger_initial",
+		Up: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`CREATE TABLE IF NOT EXISTS log_entries (
+  id BIGSERIAL PRIMARY KEY,
+  event_type VARCHAR(32) NOT NULL,
+  details TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);`,
+			)
+		},
+		Down: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`DROP TABLE IF EXISTS log_entries;`,
+			)
+		},
+	}
+}
 
-// GetMigrations returns the migrations for the specified database provider.
-func GetMigrations(ctx context.Context, provider string) (*embed.FS, error) {
-	switch provider {
-	case "sqlite":
-		return &sqliteFS, nil
-	case "postgres":
-		return &postgresFS, nil
-	case "mysql":
-		return &mysqlFS, nil
-	default:
-		return nil, fmt.Errorf("unsupported database provider: %s", provider)
+func loggerMySQLInitial() migrations.Migration {
+	return migrations.Migration{
+		Version: "20260201000000_logger_initial",
+		Up: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`CREATE TABLE IF NOT EXISTS log_entries (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  event_type VARCHAR(32) NOT NULL,
+  details TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
+			)
+		},
+		Down: func(ctx context.Context, tx bun.Tx) error {
+			return migrations.ExecStatements(
+				ctx,
+				tx,
+				`DROP TABLE IF EXISTS log_entries;`,
+			)
+		},
 	}
 }

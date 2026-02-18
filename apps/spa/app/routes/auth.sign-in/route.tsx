@@ -13,6 +13,7 @@ import { toast } from "~/hooks/use-toast";
 import type { Route } from "../+types/_index";
 import { goBetterAuthClient } from "~/lib/gba-client";
 import SocialProviderButtons from "~/components/shared/SocialProviderButtons";
+import MagicLinkSignInButton from "~/components/shared/MagicLinkSignInButton";
 
 const signInSchema = z.object({
   email: z.email("Please enter a valid email address"),
@@ -59,6 +60,7 @@ export default function SignInPage({}: Route.ComponentProps) {
   return (
     <div className="flex flex-col gap-4">
       <SocialProviderButtons />
+      <MagicLinkSignInButton />
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Controller

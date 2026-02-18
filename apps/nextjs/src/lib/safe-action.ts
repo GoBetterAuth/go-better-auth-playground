@@ -3,10 +3,10 @@ import {
   DEFAULT_SERVER_ERROR_MESSAGE,
 } from "next-safe-action";
 import * as z from "zod";
+import { GetMeResponse } from "go-better-auth";
 
 import { ActionError } from "@/models";
 import { goBetterAuthClientServer } from "./gba-client-server";
-import { GetMeResponse } from "go-better-auth";
 
 export const actionClient = createSafeActionClient({
   defineMetadataSchema() {

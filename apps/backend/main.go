@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -16,15 +17,24 @@ import (
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/v2/models"
 	csrfplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/csrf"
 	emailplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/email"
+
+	bearerplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/bearer"
 	emailpasswordplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/email-password"
 	emailpasswordplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/email-password/types"
 	emailplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/email/types"
+
+	jwtplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/jwt"
+	jwtplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/jwt/types"
+	magiclinkplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/magic-link"
+	magiclinkplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/magic-link/types"
 	oauth2plugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2"
 	oauth2plugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/oauth2/types"
-
 	ratelimitplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/rate-limit"
 	secondarystorageplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/secondary-storage"
 	sessionplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/session"
+
+	loggerplugin "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger"
+	loggerplugintypes "github.com/GoBetterAuth/go-better-auth-playground/plugins/logger/types"
 )
 
 func main() {
@@ -116,13 +126,13 @@ func main() {
 					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
-			{
-				Method: "POST",
-				Path:   "/tokens/refresh",
-				Plugins: []string{
-					csrfplugin.HookIDCSRFProtect.String(),
-				},
-			},
+			// {
+			// 	Method: "POST",
+			// 	Path:   "/tokens/refresh",
+			// 	Plugins: []string{
+			// 		csrfplugin.HookIDCSRFProtect.String(),
+			// 	},
+			// },
 			// {
 			// 	Method:  "GET",
 			// 	Path:    "/oauth2/callback/{provider}",
@@ -131,6 +141,21 @@ func main() {
 			// 		// jwtplugin.HookIDJWTRespondJSON.String(),
 			// 	},
 			// },
+			{
+				Method: "POST",
+				Path:   "/magic-link/sign-in",
+				Plugins: []string{
+					sessionplugin.HookIDSessionAuthOptional.String(),
+					csrfplugin.HookIDCSRFProtect.String(),
+				},
+			},
+			{
+				Method: "POST",
+				Path:   "/magic-link/exchange",
+				Plugins: []string{
+					csrfplugin.HookIDCSRFProtect.String(),
+				},
+			},
 			{
 				Method: "GET",
 				Path:   "/api/protected",
@@ -166,13 +191,13 @@ func main() {
 				},
 			}),
 			csrfplugin.New(csrfplugin.CSRFPluginConfig{
-				Enabled: true,
+				Enabled: false,
 			}),
 			emailplugin.New(emailplugintypes.EmailPluginConfig{
-				Enabled:          true,
-				Provider:         emailplugintypes.ProviderSMTP,
-				FallbackProvider: emailplugintypes.ProviderResend,
-				FromAddress:      "from@example.com",
+				Enabled:     true,
+				Provider:    emailplugintypes.ProviderSMTP,
+				FromAddress: "from@example.com",
+				TLSMode:     emailplugintypes.SMTPTLSModeOff,
 			}),
 			emailpasswordplugin.New(emailpasswordplugintypes.EmailPasswordPluginConfig{
 				Enabled:                  true,
@@ -206,21 +231,42 @@ func main() {
 					},
 				},
 			}),
-			sessionplugin.New(sessionplugin.SessionPluginConfig{
+			// sessionplugin.New(sessionplugin.SessionPluginConfig{
+			// 	Enabled: true,
+			// }),
+			jwtplugin.New(jwtplugintypes.JWTPluginConfig{
+				Enabled:   true,
+				Algorithm: jwtplugintypes.JWTAlgEdDSA,
+			}),
+			bearerplugin.New(bearerplugin.BearerPluginConfig{
+				Enabled: true,
+			}),
+			magiclinkplugin.New(magiclinkplugintypes.MagicLinkPluginConfig{
 				Enabled: true,
 			}),
 			ratelimitplugin.New(ratelimitplugin.RateLimitPluginConfig{
 				Enabled:  true,
 				Provider: ratelimitplugin.RateLimitProviderRedis,
 			}),
+			loggerplugin.New(loggerplugintypes.LoggerPluginConfig{
+				Enabled:     true,
+				MaxLogCount: 10,
+			}),
 		},
 	})
 
 	// You can uncomment the following 2 lines to drop all migrations (i.e., reset the database).
-	// ctx := context.Background()
-	// goBetterAuth.PluginRegistry.DropMigrations(ctx)
-	// goBetterAuth.DropCoreMigrations(ctx)
-	// return
+	ctx := context.Background()
+	if err := goBetterAuth.PluginRegistry.DropMigrations(ctx); err != nil {
+		slog.Error("failed to drop plugin migrations", "error", err)
+		return
+	}
+	if err := goBetterAuth.DropCoreMigrations(ctx); err != nil {
+		slog.Error("failed to drop core migrations", "error", err)
+		return
+	}
+	slog.Info("all migrations dropped successfully")
+	return
 
 	// -------------------------------------
 	// Add custom routes to the router
@@ -229,17 +275,17 @@ func main() {
 	// -------------------------------------
 
 	// Health check endpoint
-	goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
-		Method:   "GET",
-		Path:     "/api/health",
-		Metadata: map[string]any{},
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			reqCtx, _ := gobetterauthmodels.GetRequestContext(r.Context())
-			reqCtx.SetJSONResponse(http.StatusOK, map[string]any{
-				"status": "ok",
-			})
-		}),
-	})
+	// goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
+	// 	Method:   "GET",
+	// 	Path:     "/api/health",
+	// 	Metadata: map[string]any{},
+	// 	Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 		reqCtx, _ := gobetterauthmodels.GetRequestContext(r.Context())
+	// 		reqCtx.SetJSONResponse(http.StatusOK, map[string]any{
+	// 			"status": "ok",
+	// 		})
+	// 	}),
+	// })
 
 	// goBetterAuth.RegisterHook(gobetterauthmodels.Hook{
 	// 	Stage: gobetterauthmodels.HookBefore,

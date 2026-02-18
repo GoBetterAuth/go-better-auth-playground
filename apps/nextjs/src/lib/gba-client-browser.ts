@@ -3,6 +3,7 @@ import {
   EmailPasswordPlugin,
   OAuth2Plugin,
   CSRFPlugin,
+  MagicLinkPlugin,
 } from "go-better-auth/plugins";
 
 import { ENV_CONFIG } from "@/constants/env-config";
@@ -16,5 +17,6 @@ export const goBetterAuthClientBrowser = createClient({
       cookieName: "gobetterauth_csrf_token",
       headerName: "x-gobetterauth-csrf-token",
     }),
+    new MagicLinkPlugin(),
   ],
 });

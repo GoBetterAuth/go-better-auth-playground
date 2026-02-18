@@ -1,15 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { flattenValidationErrors } from "next-safe-action";
 
+import { flattenValidationErrors } from "next-safe-action";
 import { z } from "zod";
+import { GetMeResponse } from "go-better-auth";
 
 import { ENV_CONFIG } from "@/constants/env-config";
 import { actionClient } from "@/lib/safe-action";
 import { ActionError } from "@/models";
 import { goBetterAuthClientServer } from "@/lib/gba-client-server";
-import { GetMeResponse } from "go-better-auth";
 
 // --------------------------
 

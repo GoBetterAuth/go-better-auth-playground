@@ -1,15 +1,15 @@
 "use client";
 
-import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
+import { useAction } from "next-safe-action/hooks";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendEmailVerificationAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 
 export default function EmailVerificationPage() {
   const router = useRouter();

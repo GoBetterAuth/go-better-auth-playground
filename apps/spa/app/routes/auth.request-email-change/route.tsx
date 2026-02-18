@@ -8,7 +8,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Field, FieldLabel, FieldError } from "~/components/ui/field";
 import { toast } from "~/hooks/use-toast";
-import ENV_CONFIG from "~/constants/env-config";
 import { goBetterAuthClient } from "~/lib/gba-client";
 
 const requestEmailChangeSchema = z.object({
