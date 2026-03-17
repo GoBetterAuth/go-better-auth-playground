@@ -16,6 +16,8 @@ import (
 	gobetterauthevents "github.com/GoBetterAuth/go-better-auth/v2/events"
 	gobetterauthmodels "github.com/GoBetterAuth/go-better-auth/v2/models"
 
+	accesscontrolplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/access-control"
+	accesscontrolplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/access-control/types"
 	adminplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/admin"
 	adminplugintypes "github.com/GoBetterAuth/go-better-auth/v2/plugins/admin/types"
 	csrfplugin "github.com/GoBetterAuth/go-better-auth/v2/plugins/csrf"
@@ -166,9 +168,15 @@ func main() {
 				},
 			},
 			{
-				Method:  "GET",
-				Path:    "/api/health",
-				Plugins: []string{},
+				Method: "GET",
+				Path:   "/api/v1/health",
+				Plugins: []string{
+					sessionplugin.HookIDSessionAuth.String(),
+					accesscontrolplugin.HookIDAccessControlEnforce.String(),
+				},
+				Permissions: []string{
+					"metrics.read",
+				},
 			},
 		}),
 	)
@@ -180,6 +188,9 @@ func main() {
 	goBetterAuth := gobetterauth.New(&gobetterauth.AuthConfig{
 		Config: config,
 		Plugins: []gobetterauthmodels.Plugin{
+			accesscontrolplugin.New(accesscontrolplugintypes.AccessControlPluginConfig{
+				Enabled: true,
+			}),
 			adminplugin.New(adminplugintypes.AdminPluginConfig{
 				Enabled: true,
 			}),
@@ -278,9 +289,8 @@ func main() {
 
 	// Health check endpoint
 	goBetterAuth.RegisterCustomRoute(gobetterauthmodels.Route{
-		Method:   "GET",
-		Path:     "/api/health",
-		Metadata: map[string]any{},
+		Method: "GET",
+		Path:   "/api/v1/health",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqCtx, _ := gobetterauthmodels.GetRequestContext(r.Context())
 			reqCtx.SetJSONResponse(http.StatusOK, map[string]any{
