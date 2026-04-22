@@ -20,7 +20,7 @@ export default function EmailVerificationPage() {
 
   useEffect(() => {
     if (!email) {
-      router.push("/auth/sign-in");
+      router.replace("/auth/sign-in");
     }
   }, [email]);
 
@@ -37,9 +37,9 @@ export default function EmailVerificationPage() {
             .join(", "),
         );
       }
-      toast.success("Reset link sent successfully!");
+      toast.success("Verification email sent successfully!");
     } catch (error: any) {
-      console.error("Error during password reset:", error);
+      console.error("Error during email verification:", error);
       toast.error(error.message);
     }
   };

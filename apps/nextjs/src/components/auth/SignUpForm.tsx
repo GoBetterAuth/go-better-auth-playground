@@ -1,19 +1,25 @@
 "use client";
 
-import { useAction } from 'next-safe-action/hooks';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { useForm } from '@tanstack/react-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
+import { useForm } from "@tanstack/react-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
-import { signUpAction } from '@/app/actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import SocialProviderButtons from './SocialProviderButtons';
+import { signUpAction } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import SocialProviderButtons from "./SocialProviderButtons";
 
 const formSchema = z
   .object({
@@ -56,7 +62,9 @@ export default function SignUpForm() {
           );
         }
         toast.success("Signed up successfully!");
-        router.push("/auth/email-verification");
+        router.push(
+          `/auth/email-verification?email=${encodeURIComponent(value.email)}`,
+        );
       } catch (error: any) {
         console.error("Error during registration:", error);
         toast.error(error.message);

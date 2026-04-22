@@ -1,22 +1,28 @@
 "use client";
 
-import { useAction } from 'next-safe-action/hooks';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { z } from 'zod';
+import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
+import { toast } from "sonner";
+import { z } from "zod";
 
-import { resetPasswordAction } from '@/app/actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useForm } from '@tanstack/react-form';
+import { resetPasswordAction } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "@tanstack/react-form";
 
 const formSchema = z.object({
   email: z.email("Invalid email address"),
 });
 
-export default function ResetPasswordForm() {
+export default function RequestPasswordResetForm() {
   const { executeAsync } = useAction(resetPasswordAction);
 
   const form = useForm({
@@ -36,10 +42,9 @@ export default function ResetPasswordForm() {
           throw new Error(
             Object.entries(data.validationErrors)
               .map(([_, v]) => v)
-              .join(", ")
+              .join(", "),
           );
         }
-        console.log(data);
         toast.success("Reset link sent successfully!");
       } catch (error: any) {
         console.error("Error during password reset:", error);
