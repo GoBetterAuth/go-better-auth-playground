@@ -9,7 +9,6 @@ import (
 	"github.com/Authula/authula-playground/plugins/logger/types"
 	"github.com/Authula/authula/migrations"
 	"github.com/Authula/authula/models"
-	emailpasswordpluginconstants "github.com/Authula/authula/plugins/email-password/constants"
 )
 
 type LoggerPlugin struct {
@@ -73,14 +72,14 @@ func (p *LoggerPlugin) DependsOn() []string {
 }
 
 func (p *LoggerPlugin) subscribeToEvents() {
-	_, err := p.ctx.EventBus.Subscribe(emailpasswordpluginconstants.EventUserSignedUp, func(ctx context.Context, event models.Event) error {
-		if _, err := p.loggerService.CreateLogEntry(ctx, emailpasswordpluginconstants.EventUserSignedUp, string(event.Payload)); err != nil {
+	_, err := p.ctx.EventBus.Subscribe(models.EventTypeWildcard, func(ctx context.Context, event models.Event) error {
+		if _, err := p.loggerService.CreateLogEntry(ctx, event.Type, string(event.Payload)); err != nil {
 			p.logger.Error("failed to create log entry for user sign up event", "error", err)
 		}
 		return nil
 	})
 	if err != nil {
-		p.logger.Error("failed to subscribe to event", "event", emailpasswordpluginconstants.EventUserSignedUp, "error", err)
+		p.logger.Error("failed to subscribe to event", "event", models.EventTypeWildcard, "error", err)
 		return
 	}
 }
