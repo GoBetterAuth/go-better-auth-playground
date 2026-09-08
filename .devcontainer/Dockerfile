@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 USER root
 WORKDIR /root
 ENV HOME="/root"
-# Remove after GitHub issue #113 is done. Also remove build-essential from the apt-get install command below too.
+# TODO: Remove after GitHub issue #113 is done. Also remove build-essential from the apt-get install command below too.
 ENV CGO_ENABLED=1
 
 RUN apt-get update && apt-get install -y \
