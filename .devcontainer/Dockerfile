@@ -1,17 +1,17 @@
-FROM golang:1.26
+FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 USER root
 WORKDIR /root
-
-RUN apt update && apt install -y \
-  apt-transport-https ca-certificates gnupg lsb-release iputils-ping net-tools \
-  curl wget git zip unzip less zsh jq lsof
-
 ENV HOME="/root"
-# Required for some cgo operations such as using certain database drivers like SQLite
+# Remove after GitHub issue #113 is done. Also remove build-essential from the apt-get install command below too.
 ENV CGO_ENABLED=1
+
+RUN apt-get update && apt-get install -y \
+    apt-transport-https ca-certificates gnupg lsb-release iputils-ping net-tools \
+    curl wget git zip unzip less zsh jq lsof ripgrep \
+    && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------
 # Git
@@ -25,46 +25,58 @@ RUN git config --global --add safe.directory "/workspaces/authula-playground"
 # Oh my zsh
 # --------------------------------------
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" -- \
-  -t robbyrussell \
-  -p git -p node -p npm
+    -t robbyrussell \
+    -p git -p node -p npm
 
 ENV SHELL=/bin/zsh
 # --------------------------------------
 
 # --------------------------------------
-# Install Node.js
+# Node.js
 # --------------------------------------
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
-  && apt install -y nodejs
-RUN npm i -g pnpm@11.9.0
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get update \
+    && apt-get install -y nodejs
+
+RUN npm i -g pnpm@12.3.4
 # --------------------------------------
 
 # --------------------------------------
-# Go tools
+# Go & Go Tools
 # --------------------------------------
-# Install Go tools useful for dev
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest \
-&& go install github.com/go-delve/delve/cmd/dlv@latest \
-&& go install golang.org/x/tools/gopls@latest
+ENV GO_VERSION=1.26.4
+ENV GOPATH=/root/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+
+RUN ARCH="$(dpkg --print-architecture)" \
+    && case "${ARCH}" in \
+        amd64) GO_ARCH='amd64' ;; \
+        arm64) GO_ARCH='arm64' ;; \
+        *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
+      esac \
+    && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" | tar -C /usr/local -xz \
+    && go install github.com/go-delve/delve/cmd/dlv@latest \
+    && go install golang.org/x/tools/gopls@latest
 # --------------------------------------
 
 # --------------------------------------
 # Ngrok
 # --------------------------------------
 RUN curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
-  | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
-  && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
-  | tee /etc/apt/sources.list.d/ngrok.list \
-  && apt update \
-  && apt install -y ngrok
+    | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+    && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+    | tee /etc/apt/sources.list.d/ngrok.list \
+    && apt-get update \
+    && apt-get install -y ngrok \
+    && rm -rf /var/lib/apt/lists/*
 # --------------------------------------
 
 # --------------------------------------
-# SSH 
+# SSH
 # --------------------------------------
 RUN mkdir -p ~/.ssh
 RUN touch ~/.ssh/config
 RUN echo "Host github.com" >> ~/.ssh/config \
-  && echo "    IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
+    && echo "    IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
 RUN touch ~/.ssh/id_ed25519
 # --------------------------------------

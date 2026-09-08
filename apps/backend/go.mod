@@ -3,7 +3,7 @@ module github.com/Authula/authula-playground
 go 1.26.4
 
 require (
-	github.com/Authula/authula v1.14.0
+	github.com/Authula/authula v1.43.0
 	github.com/joho/godotenv v1.5.1
 	github.com/uptrace/bun v1.2.18
 )
@@ -114,6 +114,8 @@ require (
 	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
+	github.com/swaggest/jsonschema-go v0.3.79 // indirect
+	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.42.0 // indirect
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.42.0 // indirect
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0 // indirect

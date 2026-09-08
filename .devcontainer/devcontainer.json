@@ -6,6 +6,9 @@
   },
   "workspaceFolder": "/workspaces/authula-playground",
   "forwardPorts": [3000, 8080],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {}
+  },
   "customizations": {
     "vscode": {
       "settings": {
@@ -19,34 +22,34 @@
         "editor.formatOnSave": true,
         "files.insertFinalNewline": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "javascript.updateImportsOnFileMove.enabled": "always",
-        "typescript.updateImportsOnFileMove.enabled": "always",
+        "js/ts.updateImportsOnFileMove.enabled": "always",
         "telemetry.telemetryLevel": "off",
         "editor.bracketPairColorization.enabled": true,
         "editor.guides.bracketPairs": "active"
       },
       "extensions": [
-        "redhat.vscode-yaml",
+        "aaron-bond.better-comments",
+        "andys8.jest-snippets",
+        "bradlc.vscode-tailwindcss",
+        "codeandstuff.package-json-upgrade",
         "dbaeumer.vscode-eslint",
-        "vscode-icons-team.vscode-icons",
+        "dsznajder.es7-react-js-snippets",
         "eamodio.gitlens",
         "esbenp.prettier-vscode",
-        "aaron-bond.better-comments",
-        "codeandstuff.package-json-upgrade",
-        "dsznajder.es7-react-js-snippets",
-        "andys8.jest-snippets",
-        "mike-co.import-sorter",
-        "oderwat.indent-rainbow",
         "evondev.indent-rainbow-palettes",
         "formulahendry.auto-rename-tag",
-        "IronGeek.vscode-env",
-        "bradlc.vscode-tailwindcss",
-        "ms-azuretools.vscode-containers",
-        "yoavbls.pretty-ts-errors",
         "github.vscode-github-actions",
         "golang.go",
         "Gruntfuggly.todo-tree",
-        "tamasfe.even-better-toml"
+        "IronGeek.vscode-env",
+        "mike-co.import-sorter",
+        "ms-azuretools.vscode-containers",
+        "oderwat.indent-rainbow",
+        "oxc.oxc-vscode",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "vscode-icons-team.vscode-icons",
+        "yoavbls.pretty-ts-errors"
       ]
     }
   }

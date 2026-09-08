@@ -3,10 +3,17 @@ BINARY_NAME=authula-playground
 BUILD_DIR=build
 SRC_DIR=.
 
-.PHONY: all build run clean test deps fmt lint help
+.PHONY: all install build run clean test deps fmt lint help
 
 # Default target
 all: build
+
+# Development setup
+setup: install # Setup development environment
+	@echo "Setting up development environment..."
+	@curl -sSfL https://golangci-lint.run/install.sh | sh -s v2.13.2
+	@go install github.com/air-verse/air@latest
+	@echo "Development environment setup complete!"
 
 # Build the application
 build: ## Build the package (library)

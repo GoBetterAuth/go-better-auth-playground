@@ -43,6 +43,8 @@ import (
 	loggerplugintypes "github.com/Authula/authula-playground/plugins/logger/types"
 )
 
+type EmailPasswordServiceHooks = emailpasswordplugintypes.EmailPasswordServiceHooksConfig
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -125,6 +127,8 @@ func main() {
 				Paths: []string{
 					"POST:/email-password/sign-in",
 					"POST:/email-password/sign-up",
+					"POST:/email-password/request-password-reset",
+					"POST:/email-password/change-password",
 				},
 				Plugins: []string{
 					sessionplugin.HookIDSessionAuthOptional.String(),
@@ -138,17 +142,6 @@ func main() {
 				Plugins: []string{
 					sessionplugin.HookIDSessionAuthOptional.String(),
 					// bearer.HookIDBearerAuthOptional.String(),
-				},
-			},
-			{
-				Paths: []string{
-					"POST:/email-password/request-password-reset",
-					"POST:/email-password/change-password",
-				},
-				Plugins: []string{
-					sessionplugin.HookIDSessionAuthOptional.String(),
-					// bearer.HookIDBearerAuthOptional.String(),
-					csrfplugin.HookIDCSRFProtect.String(),
 				},
 			},
 			{
@@ -178,7 +171,7 @@ func main() {
 			},
 			// Custom Routes
 			{
-				Paths:   []string{"GET:/api/v1/health"},
+				Paths:   []string{"GET:/api/health"},
 				Plugins: []string{},
 			},
 		}),
@@ -203,9 +196,6 @@ func main() {
 					PoolSize:    10,
 					PoolTimeout: 30 * time.Second,
 				},
-			}),
-			accesscontrolplugin.New(accesscontrolplugintypes.AccessControlPluginConfig{
-				Enabled: true,
 			}),
 			csrfplugin.New(csrfplugin.CSRFPluginConfig{
 				Enabled: true,
@@ -266,6 +256,9 @@ func main() {
 				ExpiresIn:     time.Hour,
 				DisableSignUp: false,
 			}),
+			accesscontrolplugin.New(accesscontrolplugintypes.AccessControlPluginConfig{
+				Enabled: true,
+			}),
 			adminplugin.New(adminplugintypes.AdminPluginConfig{
 				Enabled:                   true,
 				ImpersonationMaxExpiresIn: 15 * time.Minute,
@@ -278,7 +271,7 @@ func main() {
 				Enabled:     true,
 				Provider:    ratelimitplugintypes.RateLimitProviderRedis,
 				Window:      time.Minute,
-				Max:         100,
+				Max:         60,
 				CustomRules: map[string]ratelimitplugintypes.RateLimitRule{},
 			}),
 
@@ -336,7 +329,7 @@ func main() {
 	// Health check endpoint
 	auth.RegisterCustomRoute(authulamodels.Route{
 		Method: "GET",
-		Path:   "/api/v1/health",
+		Path:   "/api/health",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqCtx, _ := authulamodels.GetRequestContext(r.Context())
 			reqCtx.SetJSONResponse(http.StatusOK, map[string]any{
